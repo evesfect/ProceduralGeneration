@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7351927cb81417841ae0474a78813b0d, type: 3}
+  m_Name: SocketManager
+  m_EditorClassIdentifier: 
+  SocketList:
+  - Full_Top
+  - Full_Bottom
+  - Full_Side
+  - Roof_A
+  - Roof_B
+  - Uncompatible
+  SocketCompatibilities:
+  - SocketType: Full_Top
+    CompatibleSockets:
+    - Full_Bottom
+  - SocketType: Full_Bottom
+    CompatibleSockets:
+    - Full_Top
+  - SocketType: Full_Side
+    CompatibleSockets:
+    - Full_Side
+    - Roof_A
+    - Roof_B
+  - SocketType: Roof_A
+    CompatibleSockets:
+    - Roof_A
+    - Full_Side
+  - SocketType: Roof_B
+    CompatibleSockets:
+    - Roof_B
+    - Full_Side
+  - SocketType: Uncompatible
+    CompatibleSockets: []
