@@ -19,6 +19,7 @@ MonoBehaviour:
   - Roof_A
   - Roof_B
   - Uncompatible
+  - Roof_Side
   SocketCompatibilities:
   - SocketType: Full_Top
     CompatibleSockets:
@@ -31,6 +32,7 @@ MonoBehaviour:
     - Full_Side
     - Roof_A
     - Roof_B
+    - Roof_Side
   - SocketType: Roof_A
     CompatibleSockets:
     - Roof_A
@@ -41,3 +43,7 @@ MonoBehaviour:
     - Full_Side
   - SocketType: Uncompatible
     CompatibleSockets: []
+  - SocketType: Roof_Side
+    CompatibleSockets:
+    - Roof_Side
+    - Full_Side

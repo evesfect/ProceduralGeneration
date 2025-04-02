@@ -53,34 +53,6 @@ public class BuildingBlockPreviewWindow : EditorWindow
         // Start with identity rotation
         Quaternion rotation = Quaternion.identity;
 
-        // Calculate rotation based on down direction
-        switch (downDirection)
-        {
-            case Direction.Down: // Default orientation
-                rotation = Quaternion.identity;
-                break;
-
-            case Direction.Up: // Upside down (180° around X)
-                rotation = Quaternion.Euler(180, 0, 0);
-                break;
-
-            case Direction.Front: // Front is down (90° around X)
-                rotation = Quaternion.Euler(90, 0, 0);
-                break;
-
-            case Direction.Back: // Back is down (-90° around X)
-                rotation = Quaternion.Euler(-90, 0, 0);
-                break;
-
-            case Direction.Left: // Left is down (90° around Z)
-                rotation = Quaternion.Euler(0, 0, 90);
-                break;
-
-            case Direction.Right: // Right is down (-90° around Z)
-                rotation = Quaternion.Euler(0, 0, -90);
-                break;
-        }
-
         // Apply the rotation to each direction vector
         foreach (var kvp in directionVectors)
         {
