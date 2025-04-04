@@ -436,10 +436,18 @@ MonoBehaviour:
   gridDimensions: {x: 3, y: 3, z: 3}
   cellSizePrefab: {fileID: 2616496724786896443, guid: a8f5a801e9cb3c148872b35aad0365d1, type: 3}
   gridOrigin: {fileID: 1050012403}
+  groundSocketType: ground
+  showGroundConfig: 1
+  enableRandomRotation: 1
+  enableAutoRotation: 0
   buildingBlocksManager: {fileID: 11400000, guid: 8a0c0ab3ae70cb14d87cbc4b5cdc5cfb, type: 2}
   socketManager: {fileID: 11400000, guid: 7891506dfb7460c4aa40d88fa2896917, type: 2}
   showGridGizmos: 1
   showSocketGizmos: 0
+  groundCellRows:
+  - cells: 010101
+  - cells: 010101
+  - cells: 010101
 --- !u!4 &618881659
 Transform:
   m_ObjectHideFlags: 0
