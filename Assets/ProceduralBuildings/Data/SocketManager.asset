@@ -29,6 +29,7 @@ MonoBehaviour:
     CompatibleSockets:
     - Full_Top
     - ground
+    - Full_Bottom
   - SocketType: Full_Side
     CompatibleSockets:
     - Full_Side

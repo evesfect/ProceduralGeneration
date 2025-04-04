@@ -29,6 +29,10 @@ public class ManualBlockPlacer : MonoBehaviour
     private Vector2 scrollPosition;
     private string[] blockNames;
 
+    // Rotation options
+    private bool useRandomRotation = false;
+    private bool useAutoRotation = false;
+
     // UI Styles
     private GUIStyle titleStyle;
     private GUIStyle headerStyle;
@@ -39,7 +43,7 @@ public class ManualBlockPlacer : MonoBehaviour
         // Verify we have a grid generator
         if (gridGenerator == null)
         {
-            gridGenerator = FindAnyObjectByType<GridGenerator>();
+            gridGenerator = FindFirstObjectByType<GridGenerator>();
             if (gridGenerator == null)
             {
                 Debug.LogError("ManualBlockPlacer requires a GridGenerator in the scene!");
@@ -47,6 +51,10 @@ public class ManualBlockPlacer : MonoBehaviour
                 return;
             }
         }
+
+        // Initialize with GridGenerator's settings
+        useRandomRotation = gridGenerator.enableRandomRotation;
+        useAutoRotation = gridGenerator.enableAutoRotation;
 
         // Validate the grid dimensions for the sliders
         targetPosition = new Vector3Int(
@@ -156,6 +164,38 @@ public class ManualBlockPlacer : MonoBehaviour
         }
         GUILayout.EndVertical();
 
+        // Rotation Settings
+        GUILayout.Space(10);
+        GUILayout.Label("Rotation Settings", headerStyle);
+        GUILayout.BeginVertical(boxStyle);
+
+        // Random rotation toggle
+        bool newRandomRotation = GUILayout.Toggle(useRandomRotation, "Use Random Rotation");
+        if (newRandomRotation != useRandomRotation)
+        {
+            useRandomRotation = newRandomRotation;
+            // If we enable random rotation, also apply to the grid generator
+            if (useRandomRotation)
+            {
+                gridGenerator.enableRandomRotation = true;
+            }
+            else if (gridGenerator.enableRandomRotation)
+            {
+                gridGenerator.enableRandomRotation = false;
+            }
+        }
+
+        // Auto rotation toggle (try all rotations)
+        bool newAutoRotation = GUILayout.Toggle(useAutoRotation, "Try All Rotations");
+        if (newAutoRotation != useAutoRotation)
+        {
+            useAutoRotation = newAutoRotation;
+            // Sync with grid generator
+            gridGenerator.enableAutoRotation = useAutoRotation;
+        }
+
+        GUILayout.EndVertical();
+
         // Grid Coordinates
         GUILayout.Space(10);
         GUILayout.Label("Grid Coordinates", headerStyle);
@@ -240,12 +280,29 @@ public class ManualBlockPlacer : MonoBehaviour
         if (blockNames.Length == 0 || selectedBlockIndex < 0 || selectedBlockIndex >= blockNames.Length)
             return;
 
+        // Store the current rotation settings from the grid generator
+        bool originalRandomRotation = gridGenerator.enableRandomRotation;
+        bool originalAutoRotation = gridGenerator.enableAutoRotation;
+
+        // Apply our UI settings temporarily
+        gridGenerator.enableRandomRotation = useRandomRotation;
+        gridGenerator.enableAutoRotation = useAutoRotation;
+
+        // Try to place the block
         BuildingBlock selectedBlock = gridGenerator.buildingBlocksManager.BuildingBlocks[selectedBlockIndex];
         bool success = gridGenerator.PutInCell(selectedBlock, targetPosition);
+
+        // Restore the original settings
+        gridGenerator.enableRandomRotation = originalRandomRotation;
+        gridGenerator.enableAutoRotation = originalAutoRotation;
 
         if (success)
         {
             Debug.Log($"Successfully placed {selectedBlock.Name} at {targetPosition}");
+        }
+        else
+        {
+            Debug.LogWarning($"Failed to place {selectedBlock.Name} at {targetPosition}");
         }
     }
 

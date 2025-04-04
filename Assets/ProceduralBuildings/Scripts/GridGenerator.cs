@@ -26,6 +26,13 @@ public class GridGenerator : MonoBehaviour
     [Tooltip("Show ground cell configuration in the inspector")]
     public bool showGroundConfig = true;
 
+    [Header("Placement Settings")]
+    [Tooltip("Try to place blocks with random horizontal rotation")]
+    public bool enableRandomRotation = false;
+
+    [Tooltip("Try all horizontal rotations before failing placement")]
+    public bool enableAutoRotation = false;
+
     [Header("References")]
     [Tooltip("Reference to the BuildingBlocksManager asset")]
     public BuildingBlocksManager buildingBlocksManager;
@@ -392,10 +399,72 @@ public class GridGenerator : MonoBehaviour
             return false;
         }
 
-        // Check if sockets are compatible with neighbors and at least one match exists
+        // Clone the block data to prevent modifying the original
+        BuildingBlock blockDataClone = CloneBuildingBlock(blockData);
+
+        // Track the current Y rotation in degrees (for the GameObject rotation)
+        float currentYRotation = 0f;
+
+        // If random rotation is enabled, apply random horizontal rotation
+        if (enableRandomRotation)
+        {
+            // Choose a random horizontal rotation (0, 90, 180, or 270 degrees)
+            int randomRotation = Random.Range(0, 4) * 90;
+            ApplyHorizontalYRotation(blockDataClone, randomRotation);
+            currentYRotation = randomRotation;
+            Debug.Log($"Applied random horizontal rotation of {randomRotation}°");
+        }
+
+        // Try to place the block with its current rotation
+        if (TryPlaceBlockWithRotation(blockDataClone, gridPosition, currentYRotation))
+        {
+            return true;
+        }
+
+        // If auto rotation is enabled and initial placement failed, try other rotations
+        if (enableAutoRotation || enableRandomRotation)
+        {
+            Debug.Log($"Initial placement failed, trying other rotations");
+
+            // Try all 4 horizontal rotations (skipping the one we already tried)
+            Direction originalDownDirection = blockDataClone.DownDirection;
+            int[] yRotations = { 0, 90, 180, 270 };
+
+            foreach (int yRotation in yRotations)
+            {
+                // Skip the rotation we already tried
+                if (yRotation == currentYRotation)
+                    continue;
+
+                // Reset to original orientation
+                blockDataClone = CloneBuildingBlock(blockData);
+                blockDataClone.DownDirection = originalDownDirection;
+
+                // Apply this rotation
+                ApplyHorizontalYRotation(blockDataClone, yRotation);
+
+                // Try to place with this rotation
+                if (TryPlaceBlockWithRotation(blockDataClone, gridPosition, yRotation))
+                {
+                    Debug.Log($"Successfully placed block after trying rotation {yRotation}°");
+                    return true;
+                }
+            }
+
+            Debug.LogWarning($"Failed to place block after trying all rotations");
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Try to place a block with its current rotation
+    /// </summary>
+    private bool TryPlaceBlockWithRotation(BuildingBlock blockData, Vector3Int gridPosition, float yRotationDegrees = 0f)
+    {
+        // Check if sockets are compatible
         if (!AreSocketsCompatible(blockData, gridPosition))
         {
-            Debug.LogWarning($"Building block '{blockData.Name}' has incompatible sockets or lacks connection with existing structures");
             return false;
         }
 
@@ -406,7 +475,7 @@ public class GridGenerator : MonoBehaviour
         GameObject blockObject = Instantiate(blockData.Prefab);
 
         // Align and rotate the building block
-        AlignBuildingBlock(blockObject, blockData, cell.worldPosition);
+        AlignBuildingBlock(blockObject, blockData, cell.worldPosition, yRotationDegrees);
 
         // Update the cell's socket information
         UpdateCellSockets(cell, blockData);
@@ -417,15 +486,93 @@ public class GridGenerator : MonoBehaviour
         // Mark the cell as occupied and store the building block reference
         cell.isOccupied = true;
         cell.placedBlockObject = blockObject;
-        cell.placedBlockData = blockData;
+        cell.placedBlockData = CloneBuildingBlock(blockData); // Store a copy of the used block data
 
         return true;
     }
 
     /// <summary>
+    /// Clone a BuildingBlock to prevent modifying the original
+    /// </summary>
+    private BuildingBlock CloneBuildingBlock(BuildingBlock original)
+    {
+        BuildingBlock clone = new BuildingBlock
+        {
+            Name = original.Name,
+            Prefab = original.Prefab,
+            DownDirection = original.DownDirection,
+            TopSocket = original.TopSocket,
+            BottomSocket = original.BottomSocket,
+            FrontSocket = original.FrontSocket,
+            BackSocket = original.BackSocket,
+            LeftSocket = original.LeftSocket,
+            RightSocket = original.RightSocket
+        };
+
+        return clone;
+    }
+
+    /// <summary>
+    /// Apply a random horizontal rotation to a building block (rotating around Y axis)
+    /// </summary>
+    private void ApplyRandomHorizontalRotation(BuildingBlock blockData)
+    {
+        // Choose a random horizontal rotation (0, 90, 180, or 270 degrees)
+        int randomRotation = Random.Range(0, 4) * 90;
+        ApplyHorizontalYRotation(blockData, randomRotation);
+        Debug.Log($"Applied random horizontal rotation of {randomRotation}°");
+    }
+
+    /// <summary>
+    /// Apply a specific horizontal rotation (around Y axis) to a building block
+    /// </summary>
+    private void ApplyHorizontalYRotation(BuildingBlock blockData, int yRotationDegrees)
+    {
+        // Normalize the rotation to 0, 90, 180, or 270 degrees
+        yRotationDegrees = ((yRotationDegrees % 360) + 360) % 360;
+
+        // Skip if rotation is 0 degrees
+        if (yRotationDegrees == 0)
+            return;
+
+        // Store original socket values
+        string originalTop = blockData.TopSocket;
+        string originalBottom = blockData.BottomSocket;
+        string originalFront = blockData.FrontSocket;
+        string originalBack = blockData.BackSocket;
+        string originalLeft = blockData.LeftSocket;
+        string originalRight = blockData.RightSocket;
+
+        // Apply rotation based on angle
+        switch (yRotationDegrees)
+        {
+            case 90: // 90 degrees clockwise around Y axis
+                blockData.FrontSocket = originalRight;
+                blockData.RightSocket = originalBack;
+                blockData.BackSocket = originalLeft;
+                blockData.LeftSocket = originalFront;
+                break;
+
+            case 180: // 180 degrees around Y axis
+                blockData.FrontSocket = originalBack;
+                blockData.BackSocket = originalFront;
+                blockData.LeftSocket = originalRight;
+                blockData.RightSocket = originalLeft;
+                break;
+
+            case 270: // 270 degrees clockwise (or 90 counterclockwise) around Y axis
+                blockData.FrontSocket = originalLeft;
+                blockData.LeftSocket = originalBack;
+                blockData.BackSocket = originalRight;
+                blockData.RightSocket = originalFront;
+                break;
+        }
+    }
+
+    /// <summary>
     /// Align a building block with the bottom of a cell, accounting for its down direction
     /// </summary>
-    private void AlignBuildingBlock(GameObject blockObject, BuildingBlock blockData, Vector3 cellWorldPosition)
+    private void AlignBuildingBlock(GameObject blockObject, BuildingBlock blockData, Vector3 cellWorldPosition, float yRotationDegrees = 0f)
     {
         // Get the building block's renderer to find its bounds
         Renderer renderer = blockObject.GetComponent<Renderer>();
@@ -438,7 +585,13 @@ public class GridGenerator : MonoBehaviour
         if (renderer != null)
         {
             // Apply rotation based on the block's down direction
-            blockObject.transform.rotation = GetRotationFromDirection(blockData.DownDirection);
+            Quaternion verticalRotation = GetRotationFromDirection(blockData.DownDirection);
+
+            // Add Y rotation
+            Quaternion yRotation = Quaternion.Euler(0, yRotationDegrees, 0);
+
+            // Apply the combined rotation
+            blockObject.transform.rotation = yRotation * verticalRotation;
 
             // Force physics update to recalculate bounds after rotation
             Physics.SyncTransforms();
@@ -456,7 +609,7 @@ public class GridGenerator : MonoBehaviour
                 cellWorldPosition.z + (cellSize.z / 2f)  // Center Z
             );
 
-            Debug.Log($"Building block '{blockData.Name}' aligned at {blockObject.transform.position}");
+            Debug.Log($"Building block '{blockData.Name}' aligned at {blockObject.transform.position} with Y rotation {yRotationDegrees}°");
         }
         else
         {
@@ -466,7 +619,12 @@ public class GridGenerator : MonoBehaviour
                 cellWorldPosition.y + (cellSize.y / 2f),
                 cellWorldPosition.z + (cellSize.z / 2f)
             );
-            blockObject.transform.rotation = GetRotationFromDirection(blockData.DownDirection);
+
+            // Apply rotation
+            Quaternion verticalRotation = GetRotationFromDirection(blockData.DownDirection);
+            Quaternion yRotation = Quaternion.Euler(0, yRotationDegrees, 0);
+            blockObject.transform.rotation = yRotation * verticalRotation;
+
             Debug.LogWarning($"No renderer found on building block '{blockData.Name}' for alignment");
         }
     }
@@ -608,11 +766,8 @@ public class GridGenerator : MonoBehaviour
     /// </summary>
     private bool AreSocketsCompatible(BuildingBlock blockData, Vector3Int position)
     {
-        Debug.Log($"===== Checking socket compatibility for {blockData.Name} at {position} =====");
-
         // Get the building block's bottom socket
         string blockBottomSocket = blockData.GetSocketForDirection(Direction.Down);
-        Debug.Log($"Block bottom socket: {(string.IsNullOrEmpty(blockBottomSocket) ? "None" : blockBottomSocket)}");
 
         // Skip if the block doesn't have a bottom socket
         if (string.IsNullOrEmpty(blockBottomSocket))
@@ -628,19 +783,26 @@ public class GridGenerator : MonoBehaviour
             GridCell currentCell = grid[position.x, position.y, position.z];
             string groundSocket = currentCell.sockets[DirectionToIndex(Direction.Down)];
 
-            Debug.Log($"Ground level check:");
-            Debug.Log($"  - Cell ground socket: {(string.IsNullOrEmpty(groundSocket) ? "None" : groundSocket)}");
-
             // If ground socket exists, check compatibility
             if (!string.IsNullOrEmpty(groundSocket))
             {
                 bool compatible = IsSocketCompatible(blockBottomSocket, groundSocket);
-                Debug.Log($"  - Ground compatibility: {compatible}");
 
-                return compatible;
+                if (compatible)
+                {
+                    Debug.Log($"Compatible with ground socket: {blockBottomSocket} connects with {groundSocket}");
+                    return true;
+                }
+                else
+                {
+                    Debug.Log($"Incompatible with ground socket: {blockBottomSocket} does not connect with {groundSocket}");
+                }
+            }
+            else
+            {
+                Debug.Log("No ground socket found at this position");
             }
 
-            Debug.Log("No ground socket found, cannot place");
             return false;
         }
 
@@ -659,8 +821,6 @@ public class GridGenerator : MonoBehaviour
 
         // Get the top socket of the cell below
         string belowTopSocket = cellBelow.sockets[DirectionToIndex(Direction.Up)];
-        Debug.Log($"Cell below at {belowPos}:");
-        Debug.Log($"  - Top socket: {(string.IsNullOrEmpty(belowTopSocket) ? "None" : belowTopSocket)}");
 
         // Skip if the cell below doesn't have a top socket
         if (string.IsNullOrEmpty(belowTopSocket))
@@ -671,7 +831,15 @@ public class GridGenerator : MonoBehaviour
 
         // Check compatibility
         bool isCompatible = IsSocketCompatible(blockBottomSocket, belowTopSocket);
-        Debug.Log($"Socket compatibility: {isCompatible}");
+
+        if (isCompatible)
+        {
+            Debug.Log($"Compatible with cell below: {blockBottomSocket} connects with {belowTopSocket}");
+        }
+        else
+        {
+            Debug.Log($"Incompatible with cell below: {blockBottomSocket} does not connect with {belowTopSocket}");
+        }
 
         return isCompatible;
     }
@@ -681,13 +849,22 @@ public class GridGenerator : MonoBehaviour
     /// </summary>
     private bool IsSocketCompatible(string socketA, string socketB)
     {
-        // Use the socket manager's compatibility information
-        if (socketCompatibilityDict.ContainsKey(socketA))
+        // Check if the socketCompatibilityDict is initialized
+        if (socketCompatibilityDict == null)
         {
-            return socketCompatibilityDict[socketA].Contains(socketB);
+            Debug.LogError("Socket compatibility dictionary is null!");
+            return false;
         }
 
-        return false;
+        // Check if the socket type exists in the dictionary
+        if (!socketCompatibilityDict.ContainsKey(socketA))
+        {
+            Debug.LogWarning($"Socket type '{socketA}' not found in compatibility dictionary");
+            return false;
+        }
+
+        // Check compatibility
+        return socketCompatibilityDict[socketA].Contains(socketB);
     }
 
     /// <summary>
@@ -722,32 +899,68 @@ public class GridGenerator : MonoBehaviour
 
         GridCell cell = grid[gridPosition.x, gridPosition.y, gridPosition.z];
 
+        // Destroy the GameObject
         if (cell.isOccupied && cell.placedBlockObject != null)
         {
             Destroy(cell.placedBlockObject);
         }
 
-        // Reset the cell
+        // Reset the cell's occupation status
         cell.isOccupied = false;
         cell.placedBlockObject = null;
         cell.placedBlockData = null;
 
-        // Reset socket info (except for ground sockets on bottom layer)
+        // Check each direction and only reset socket if neighbor is empty or out of bounds
         for (int i = 0; i < 6; i++)
         {
-            // If this is the bottom layer and bottom socket, check if it should have a ground socket
+            Direction direction = IndexToDirection(i);
+            Vector3Int neighborPos = GetNeighborPosition(gridPosition, direction);
+
+            bool resetSocket = true;
+
+            // Keep socket if it's a ground socket on the bottom layer
             if (gridPosition.y == 0 && i == DirectionToIndex(Direction.Down) && HasGroundCell(gridPosition.x, gridPosition.z))
             {
                 cell.sockets[i] = groundSocketType;
+                resetSocket = false;
             }
-            else
+            // Keep socket if neighbor exists and is occupied
+            else if (IsValidPosition(neighborPos) && grid[neighborPos.x, neighborPos.y, neighborPos.z].isOccupied)
+            {
+                resetSocket = false;
+                // Socket value stays the same to maintain connection with the neighboring block
+            }
+
+            // Reset the socket if needed
+            if (resetSocket)
             {
                 cell.sockets[i] = "";
             }
         }
 
-        // Update neighboring cells' sockets
-        UpdateNeighborSockets(gridPosition);
+        // Update neighboring cells' sockets that face this cell
+        for (int i = 0; i < 6; i++)
+        {
+            Direction direction = IndexToDirection(i);
+            Vector3Int neighborPos = GetNeighborPosition(gridPosition, direction);
+
+            // Skip if neighbor is out of bounds
+            if (!IsValidPosition(neighborPos))
+                continue;
+
+            // Get the opposite direction's index
+            Direction oppositeDirection = GetOppositeDirection(direction);
+            int oppositeIndex = DirectionToIndex(oppositeDirection);
+
+            // Only reset the neighbor's socket if it's not occupied
+            GridCell neighbor = grid[neighborPos.x, neighborPos.y, neighborPos.z];
+            if (!neighbor.isOccupied)
+            {
+                neighbor.sockets[oppositeIndex] = "";
+            }
+        }
+
+        Debug.Log($"Cleared cell at {gridPosition} while preserving sockets for occupied neighbors");
     }
 
     /// <summary>
