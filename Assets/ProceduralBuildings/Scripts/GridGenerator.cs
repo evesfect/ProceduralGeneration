@@ -1,9 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
-
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.SceneManagement;
 #endif
 
 /// <summary>
@@ -20,6 +18,13 @@ public class GridGenerator : MonoBehaviour
 
     [Tooltip("World position of the bottom-left corner of the grid")]
     public Transform gridOrigin;
+
+    [Header("Ground Settings")]
+    [Tooltip("Socket type to use for ground connections")]
+    public string groundSocketType = "ground";
+
+    [Tooltip("Show ground cell configuration in the inspector")]
+    public bool showGroundConfig = true;
 
     [Header("References")]
     [Tooltip("Reference to the BuildingBlocksManager asset")]
@@ -43,6 +48,17 @@ public class GridGenerator : MonoBehaviour
 
     // Reference to current socket compatibility dictionary
     private Dictionary<string, List<string>> socketCompatibilityDict;
+
+    // Serializable class to store ground cell configuration
+    [System.Serializable]
+    public class GroundCellRow
+    {
+        public List<bool> cells = new List<bool>();
+    }
+
+    // Ground cell configuration (which bottom cells have ground sockets)
+    [SerializeField]
+    private List<GroundCellRow> groundCellRows = new List<GroundCellRow>();
 
     /// <summary>
     /// Represents a single cell in the 3D grid
@@ -106,6 +122,12 @@ public class GridGenerator : MonoBehaviour
         // Calculate cell size from the prefab
         CalculateCellSize();
 
+        // Initialize ground cells if needed
+        if (groundCellRows.Count == 0)
+        {
+            InitializeGroundCells();
+        }
+
         // Initialize the grid
         InitializeGrid();
 
@@ -113,18 +135,15 @@ public class GridGenerator : MonoBehaviour
         socketCompatibilityDict = socketManager.GetSocketCompDict();
     }
 
+    /// <summary>
+    /// Handles changes to inspector properties
+    /// </summary>
     public void OnValidate()
     {
-        // Recalculate cell size if needed
-        if (cellSizePrefab != null)
+        // If grid dimensions changed, resize the ground cells
+        if (gridDimensions.x > 0 && gridDimensions.z > 0)
         {
-            CalculateCellSize();
-        }
-
-        // Update the socket compatibility dictionary
-        if (socketManager != null)
-        {
-            socketCompatibilityDict = socketManager.GetSocketCompDict();
+            ResizeGroundCells();
         }
     }
 
@@ -158,6 +177,140 @@ public class GridGenerator : MonoBehaviour
     }
 
     /// <summary>
+    /// Get the current cell size
+    /// </summary>
+    public Vector3 GetCellSize()
+    {
+        return cellSize;
+    }
+
+    /// <summary>
+    /// Initialize ground cell configuration
+    /// </summary>
+    private void InitializeGroundCells()
+    {
+        groundCellRows.Clear();
+
+        for (int x = 0; x < gridDimensions.x; x++)
+        {
+            GroundCellRow row = new GroundCellRow();
+            for (int z = 0; z < gridDimensions.z; z++)
+            {
+                row.cells.Add(true); // By default, all cells have ground
+            }
+            groundCellRows.Add(row);
+        }
+    }
+
+    /// <summary>
+    /// Resize ground cell configuration when grid dimensions change
+    /// </summary>
+    private void ResizeGroundCells()
+    {
+        // If empty, initialize
+        if (groundCellRows.Count == 0)
+        {
+            InitializeGroundCells();
+            return;
+        }
+
+        // Resize X dimension
+        if (groundCellRows.Count != gridDimensions.x)
+        {
+            // If smaller, add new rows
+            while (groundCellRows.Count < gridDimensions.x)
+            {
+                GroundCellRow newRow = new GroundCellRow();
+                for (int z = 0; z < gridDimensions.z; z++)
+                {
+                    newRow.cells.Add(true);
+                }
+                groundCellRows.Add(newRow);
+            }
+
+            // If larger, remove excess rows
+            while (groundCellRows.Count > gridDimensions.x)
+            {
+                groundCellRows.RemoveAt(groundCellRows.Count - 1);
+            }
+        }
+
+        // Resize Z dimension in each row
+        for (int x = 0; x < groundCellRows.Count; x++)
+        {
+            // If smaller, add new cells
+            while (groundCellRows[x].cells.Count < gridDimensions.z)
+            {
+                groundCellRows[x].cells.Add(true);
+            }
+
+            // If larger, remove excess cells
+            while (groundCellRows[x].cells.Count > gridDimensions.z)
+            {
+                groundCellRows[x].cells.RemoveAt(groundCellRows[x].cells.Count - 1);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check if a ground cell is enabled at the given coordinates
+    /// </summary>
+    public bool HasGroundCell(int x, int z)
+    {
+        if (x >= 0 && x < gridDimensions.x && z >= 0 && z < gridDimensions.z)
+        {
+            // Ensure the rows are properly sized
+            if (x < groundCellRows.Count && z < groundCellRows[x].cells.Count)
+            {
+                return groundCellRows[x].cells[z];
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Set the ground cell status at the given coordinates
+    /// </summary>
+    public void SetGroundCell(int x, int z, bool hasGround)
+    {
+        if (x >= 0 && x < gridDimensions.x && z >= 0 && z < gridDimensions.z)
+        {
+            // Ensure the list is properly sized
+            if (x < groundCellRows.Count && z < groundCellRows[x].cells.Count)
+            {
+                groundCellRows[x].cells[z] = hasGround;
+
+                // Update the bottom cell socket if grid is initialized
+                if (grid != null)
+                {
+                    if (hasGround)
+                    {
+                        grid[x, 0, z].sockets[DirectionToIndex(Direction.Down)] = groundSocketType;
+                    }
+                    else
+                    {
+                        grid[x, 0, z].sockets[DirectionToIndex(Direction.Down)] = "";
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Set all ground cells to the specified state
+    /// </summary>
+    public void SetAllGroundCells(bool hasGround)
+    {
+        for (int x = 0; x < gridDimensions.x; x++)
+        {
+            for (int z = 0; z < gridDimensions.z; z++)
+            {
+                SetGroundCell(x, z, hasGround);
+            }
+        }
+    }
+
+    /// <summary>
     /// Initialize the grid with empty cells
     /// </summary>
     private void InitializeGrid()
@@ -185,17 +338,17 @@ public class GridGenerator : MonoBehaviour
                     // Create a new cell
                     Vector3Int gridPos = new Vector3Int(x, y, z);
                     grid[x, y, z] = new GridCell(gridPos, worldPos);
+
+                    // Set ground socket for bottom layer cells if configured
+                    if (y == 0 && HasGroundCell(x, z))
+                    {
+                        grid[x, 0, z].sockets[DirectionToIndex(Direction.Down)] = groundSocketType;
+                    }
                 }
             }
         }
 
         Debug.Log($"Grid initialized with dimensions {gridDimensions}");
-    }
-    
-    // Exposing cell size for other tools
-    public Vector3 GetCellSize()
-    {
-        return cellSize;
     }
 
     /// <summary>
@@ -239,10 +392,10 @@ public class GridGenerator : MonoBehaviour
             return false;
         }
 
-        // Check if sockets are compatible with neighbors
+        // Check if sockets are compatible with neighbors and at least one match exists
         if (!AreSocketsCompatible(blockData, gridPosition))
         {
-            Debug.LogWarning($"Building block '{blockData.Name}' has incompatible sockets with neighboring cells");
+            Debug.LogWarning($"Building block '{blockData.Name}' has incompatible sockets or lacks connection with existing structures");
             return false;
         }
 
@@ -394,23 +547,6 @@ public class GridGenerator : MonoBehaviour
     }
 
     /// <summary>
-    /// Get the index of the opposite direction
-    /// </summary>
-    private int GetOppositeIndex(int index)
-    {
-        switch (index)
-        {
-            case 0: return 1; // Right -> Left
-            case 1: return 0; // Left -> Right
-            case 2: return 3; // Up -> Down
-            case 3: return 2; // Down -> Up
-            case 4: return 5; // Front -> Back
-            case 5: return 4; // Back -> Front
-            default: return index;
-        }
-    }
-
-    /// <summary>
     /// Get the grid position of the neighbor in the specified direction
     /// </summary>
     private Vector3Int GetNeighborPosition(Vector3Int position, Direction direction)
@@ -459,7 +595,7 @@ public class GridGenerator : MonoBehaviour
                 continue;
 
             // Get the opposite direction's index
-            int oppositeIndex = GetOppositeIndex(i);
+            int oppositeIndex = DirectionToIndex(GetOppositeDirection(direction));
 
             // Update the neighbor's socket
             GridCell neighbor = grid[neighborPos.x, neighborPos.y, neighborPos.z];
@@ -468,41 +604,76 @@ public class GridGenerator : MonoBehaviour
     }
 
     /// <summary>
-    /// Check if a building block's sockets are compatible with neighbors
+    /// Check if a building block's bottom socket is compatible with the socket below it
     /// </summary>
     private bool AreSocketsCompatible(BuildingBlock blockData, Vector3Int position)
     {
-        // For each direction, check if the socket is compatible with the neighbor
-        foreach (Direction direction in System.Enum.GetValues(typeof(Direction)))
+        Debug.Log($"===== Checking socket compatibility for {blockData.Name} at {position} =====");
+
+        // Get the building block's bottom socket
+        string blockBottomSocket = blockData.GetSocketForDirection(Direction.Down);
+        Debug.Log($"Block bottom socket: {(string.IsNullOrEmpty(blockBottomSocket) ? "None" : blockBottomSocket)}");
+
+        // Skip if the block doesn't have a bottom socket
+        if (string.IsNullOrEmpty(blockBottomSocket))
         {
-            Vector3Int neighborPos = GetNeighborPosition(position, direction);
-
-            // Skip if neighbor is out of bounds
-            if (!IsValidPosition(neighborPos))
-                continue;
-
-            // Skip if neighbor is not occupied
-            GridCell neighbor = grid[neighborPos.x, neighborPos.y, neighborPos.z];
-            if (!neighbor.isOccupied)
-                continue;
-
-            // Get the socket types
-            string blockSocket = blockData.GetSocketForDirection(direction);
-            int oppositeIndex = DirectionToIndex(GetOppositeDirection(direction));
-            string neighborSocket = neighbor.sockets[oppositeIndex];
-
-            // Skip if either socket is empty
-            if (string.IsNullOrEmpty(blockSocket) || string.IsNullOrEmpty(neighborSocket))
-                continue;
-
-            // Check compatibility
-            if (!IsSocketCompatible(blockSocket, neighborSocket))
-            {
-                return false;
-            }
+            Debug.Log("Block has no bottom socket defined, cannot place");
+            return false;
         }
 
-        return true;
+        // CASE 1: Ground level (y=0) - Check against ground socket
+        if (position.y == 0)
+        {
+            // Get the current cell to check its ground socket
+            GridCell currentCell = grid[position.x, position.y, position.z];
+            string groundSocket = currentCell.sockets[DirectionToIndex(Direction.Down)];
+
+            Debug.Log($"Ground level check:");
+            Debug.Log($"  - Cell ground socket: {(string.IsNullOrEmpty(groundSocket) ? "None" : groundSocket)}");
+
+            // If ground socket exists, check compatibility
+            if (!string.IsNullOrEmpty(groundSocket))
+            {
+                bool compatible = IsSocketCompatible(blockBottomSocket, groundSocket);
+                Debug.Log($"  - Ground compatibility: {compatible}");
+
+                return compatible;
+            }
+
+            Debug.Log("No ground socket found, cannot place");
+            return false;
+        }
+
+        // CASE 2: Above ground - Check socket of cell below
+        Vector3Int belowPos = new Vector3Int(position.x, position.y - 1, position.z);
+
+        // Verify the position below is valid
+        if (!IsValidPosition(belowPos))
+        {
+            Debug.Log("Position below is out of bounds, cannot place");
+            return false;
+        }
+
+        // Get the cell below
+        GridCell cellBelow = grid[belowPos.x, belowPos.y, belowPos.z];
+
+        // Get the top socket of the cell below
+        string belowTopSocket = cellBelow.sockets[DirectionToIndex(Direction.Up)];
+        Debug.Log($"Cell below at {belowPos}:");
+        Debug.Log($"  - Top socket: {(string.IsNullOrEmpty(belowTopSocket) ? "None" : belowTopSocket)}");
+
+        // Skip if the cell below doesn't have a top socket
+        if (string.IsNullOrEmpty(belowTopSocket))
+        {
+            Debug.Log("Cell below has no top socket, cannot place");
+            return false;
+        }
+
+        // Check compatibility
+        bool isCompatible = IsSocketCompatible(blockBottomSocket, belowTopSocket);
+        Debug.Log($"Socket compatibility: {isCompatible}");
+
+        return isCompatible;
     }
 
     /// <summary>
@@ -534,23 +705,11 @@ public class GridGenerator : MonoBehaviour
     /// </summary>
     public GridCell GetCell(Vector3Int gridPosition)
     {
-        if (IsValidPosition(gridPosition))
+        if (grid != null && IsValidPosition(gridPosition))
         {
             return grid[gridPosition.x, gridPosition.y, gridPosition.z];
         }
         return null;
-    }
-
-    /// <summary>
-    /// Get the total size of the grid in world units
-    /// </summary>
-    public Vector3 GetGridWorldSize()
-    {
-        return new Vector3(
-            gridDimensions.x * cellSize.x,
-            gridDimensions.y * cellSize.y,
-            gridDimensions.z * cellSize.z
-        );
     }
 
     /// <summary>
@@ -573,10 +732,18 @@ public class GridGenerator : MonoBehaviour
         cell.placedBlockObject = null;
         cell.placedBlockData = null;
 
-        // Reset socket info
+        // Reset socket info (except for ground sockets on bottom layer)
         for (int i = 0; i < 6; i++)
         {
-            cell.sockets[i] = "";
+            // If this is the bottom layer and bottom socket, check if it should have a ground socket
+            if (gridPosition.y == 0 && i == DirectionToIndex(Direction.Down) && HasGroundCell(gridPosition.x, gridPosition.z))
+            {
+                cell.sockets[i] = groundSocketType;
+            }
+            else
+            {
+                cell.sockets[i] = "";
+            }
         }
 
         // Update neighboring cells' sockets
@@ -667,6 +834,15 @@ public class GridGenerator : MonoBehaviour
 
                     Vector3 centerPos = cellPosition + (previewCellSize / 2f);
                     Gizmos.DrawWireCube(centerPos, previewCellSize * 0.9f);
+
+                    // Highlight ground cells in the bottom layer
+                    if (y == 0 && HasGroundCell(x, z))
+                    {
+                        Gizmos.color = new Color(0.8f, 0.6f, 0.2f, 0.3f);
+                        Gizmos.DrawCube(new Vector3(centerPos.x, centerPos.y - previewCellSize.y / 2.2f, centerPos.z),
+                                        new Vector3(previewCellSize.x * 0.9f, 0.05f, previewCellSize.z * 0.9f));
+                        Gizmos.color = new Color(0.5f, 0.5f, 1f, 0.3f);
+                    }
                 }
             }
         }
@@ -682,33 +858,33 @@ public class GridGenerator : MonoBehaviour
         float socketSize = 0.1f;
         Vector3[] socketPositions = new Vector3[6]
         {
-        cellCenter + new Vector3(cellSize.x / 2f, 0, 0),      // Right
-        cellCenter + new Vector3(-cellSize.x / 2f, 0, 0),     // Left
-        cellCenter + new Vector3(0, cellSize.y / 2f, 0),      // Up
-        cellCenter + new Vector3(0, -cellSize.y / 2f, 0),     // Down
-        cellCenter + new Vector3(0, 0, cellSize.z / 2f),      // Forward
-        cellCenter + new Vector3(0, 0, -cellSize.z / 2f)      // Back
+            cellCenter + new Vector3(cellSize.x / 2f, 0, 0),      // Right
+            cellCenter + new Vector3(-cellSize.x / 2f, 0, 0),     // Left
+            cellCenter + new Vector3(0, cellSize.y / 2f, 0),      // Up
+            cellCenter + new Vector3(0, -cellSize.y / 2f, 0),     // Down
+            cellCenter + new Vector3(0, 0, cellSize.z / 2f),      // Forward
+            cellCenter + new Vector3(0, 0, -cellSize.z / 2f)      // Back
         };
 
         Color[] socketColors = new Color[6]
         {
-        Color.red,       // Right
-        Color.green,     // Left
-        Color.blue,      // Up
-        Color.yellow,    // Down
-        Color.magenta,   // Forward
-        Color.cyan       // Back
+            Color.red,       // Right
+            Color.green,     // Left
+            Color.blue,      // Up
+            Color.yellow,    // Down
+            Color.magenta,   // Front
+            Color.cyan       // Back
         };
 
         // Direction names for labels
         string[] directionNames = new string[6]
         {
-        "R", // Right
-        "L", // Left
-        "U", // Up
-        "D", // Down
-        "F", // Front
-        "B"  // Back
+            "R", // Right
+            "L", // Left
+            "U", // Up
+            "D", // Down
+            "F", // Front
+            "B"  // Back
         };
 
         // Get mouse position in the scene view
@@ -721,6 +897,10 @@ public class GridGenerator : MonoBehaviour
         // Draw each socket
         for (int i = 0; i < 6; i++)
         {
+            // Skip if socket is empty
+            if (string.IsNullOrEmpty(cell.sockets[i]))
+                continue;
+
             // Check if mouse is hovering over this socket
             bool isHovered = false;
             float distanceToMouse = UnityEditor.HandleUtility.DistancePointLine(socketPositions[i], ray.origin, ray.origin + ray.direction * 100);
@@ -729,18 +909,8 @@ public class GridGenerator : MonoBehaviour
                 isHovered = true;
             }
 
-            // Base color for the socket
-            Color socketColor;
-
-            // If socket has a type, use white; otherwise use the direction color
-            if (!string.IsNullOrEmpty(cell.sockets[i]))
-            {
-                socketColor = Color.white;
-            }
-            else
-            {
-                socketColor = socketColors[i];
-            }
+            // Base color for the socket (white for non-empty sockets)
+            Color socketColor = Color.white;
 
             // Apply transparency unless hovered
             if (!isHovered)
@@ -753,48 +923,136 @@ public class GridGenerator : MonoBehaviour
             Gizmos.color = socketColor;
             Gizmos.DrawSphere(socketPositions[i], socketSize);
 
-            // Display the socket type as text for non-empty sockets
-            if (!string.IsNullOrEmpty(cell.sockets[i]))
+            // Calculate label position slightly offset from the socket
+            Vector3 labelOffset = (socketPositions[i] - cellCenter).normalized * 0.2f;
+            Vector3 labelPos = socketPositions[i] + labelOffset;
+
+            // Create label text with direction and socket type
+            string labelText = $"{directionNames[i]}: {cell.sockets[i]}";
+
+            // Set text color with appropriate transparency
+            Color textColor = socketColors[i];
+            if (!isHovered)
             {
-                // Calculate label position slightly offset from the socket
-                Vector3 labelOffset = (socketPositions[i] - cellCenter).normalized * 0.2f;
-                Vector3 labelPos = socketPositions[i] + labelOffset;
-
-                // Create label text with direction and socket type
-                string labelText = $"{directionNames[i]}: {cell.sockets[i]}";
-
-                // Set text color with appropriate transparency
-                Color textColor = socketColors[i];
-                if (!isHovered)
-                {
-                    textColor.a = 0.4f;
-                }
-
-                // Set the text color in the style
-                labelStyle.normal.textColor = textColor;
-
-                // Draw the text label with the custom style
-                UnityEditor.Handles.Label(labelPos, labelText, labelStyle);
+                textColor.a = 0.4f;
             }
+
+            // Set the text color in the style
+            labelStyle.normal.textColor = textColor;
+
+            // Draw the text label with the custom style
+            UnityEditor.Handles.Label(labelPos, labelText, labelStyle);
         }
 #else
-    // Draw basic socket visualization for builds
-    float socketSize = 0.1f;
-    Vector3[] socketPositions = new Vector3[6]
-    {
-        cellCenter + new Vector3(cellSize.x / 2f, 0, 0),
-        cellCenter + new Vector3(-cellSize.x / 2f, 0, 0),
-        cellCenter + new Vector3(0, cellSize.y / 2f, 0),
-        cellCenter + new Vector3(0, -cellSize.y / 2f, 0),
-        cellCenter + new Vector3(0, 0, cellSize.z / 2f),
-        cellCenter + new Vector3(0, 0, -cellSize.z / 2f)
-    };
-    
-    for (int i = 0; i < 6; i++)
-    {
-        Gizmos.color = !string.IsNullOrEmpty(cell.sockets[i]) ? Color.white : new Color(1, 1, 1, 0.4f);
-        Gizmos.DrawSphere(socketPositions[i], socketSize);
-    }
+        // Draw basic socket visualization for builds
+        float socketSize = 0.1f;
+        Vector3[] socketPositions = new Vector3[6]
+        {
+            cellCenter + new Vector3(cellSize.x / 2f, 0, 0),
+            cellCenter + new Vector3(-cellSize.x / 2f, 0, 0),
+            cellCenter + new Vector3(0, cellSize.y / 2f, 0),
+            cellCenter + new Vector3(0, -cellSize.y / 2f, 0),
+            cellCenter + new Vector3(0, 0, cellSize.z / 2f),
+            cellCenter + new Vector3(0, 0, -cellSize.z / 2f)
+        };
+        
+        for (int i = 0; i < 6; i++)
+        {
+            if (!string.IsNullOrEmpty(cell.sockets[i]))
+            {
+                Gizmos.color = Color.white;
+                Gizmos.DrawSphere(socketPositions[i], socketSize);
+            }
+        }
 #endif
     }
 }
+
+#if UNITY_EDITOR
+/// <summary>
+/// Custom editor for the GridGenerator to add ground cell configuration
+/// </summary>
+[CustomEditor(typeof(GridGenerator))]
+public class GridGeneratorEditor : Editor
+{
+    private Vector2 groundConfigScrollPosition;
+
+    public override void OnInspectorGUI()
+    {
+        // Draw the default inspector
+        DrawDefaultInspector();
+
+        // Get the GridGenerator instance
+        GridGenerator gridGenerator = (GridGenerator)target;
+
+        // Draw the ground configuration UI if enabled
+        if (gridGenerator.showGroundConfig)
+        {
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("Ground Cell Configuration", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Configure which cells in the bottom layer have ground sockets", MessageType.Info);
+
+            // Begin scrollable area for the checkboxes
+            groundConfigScrollPosition = EditorGUILayout.BeginScrollView(
+                groundConfigScrollPosition,
+                GUILayout.Height(300)
+            );
+
+            // Display column headers
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(40); // Space for row labels
+            for (int x = 0; x < gridGenerator.gridDimensions.x; x++)
+            {
+                GUILayout.Label($"{x}", GUILayout.Width(18));
+            }
+            EditorGUILayout.EndHorizontal();
+
+            // Display grid of checkboxes (z rows, x columns)
+            for (int z = 0; z < gridGenerator.gridDimensions.z; z++)
+            {
+                EditorGUILayout.BeginHorizontal();
+
+                // Show row header
+                GUILayout.Label($"Z: {z}", GUILayout.Width(40));
+
+                for (int x = 0; x < gridGenerator.gridDimensions.x; x++)
+                {
+                    bool hasGround = gridGenerator.HasGroundCell(x, z);
+
+                    // Toggle checkbox
+                    bool newValue = EditorGUILayout.Toggle(hasGround, GUILayout.Width(18));
+
+                    // Update ground cells if changed
+                    if (newValue != hasGround)
+                    {
+                        Undo.RecordObject(gridGenerator, "Change Ground Cell");
+                        gridGenerator.SetGroundCell(x, z, newValue);
+                        EditorUtility.SetDirty(gridGenerator);
+                    }
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+
+            EditorGUILayout.EndScrollView();
+
+            // Buttons to select/deselect all
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Select All"))
+            {
+                Undo.RecordObject(gridGenerator, "Select All Ground Cells");
+                gridGenerator.SetAllGroundCells(true);
+                EditorUtility.SetDirty(gridGenerator);
+            }
+
+            if (GUILayout.Button("Deselect All"))
+            {
+                Undo.RecordObject(gridGenerator, "Deselect All Ground Cells");
+                gridGenerator.SetAllGroundCells(false);
+                EditorUtility.SetDirty(gridGenerator);
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+    }
+}
+#endif
