@@ -4,6 +4,7 @@ using UnityEngine;
 public class BuildingGenerator : MonoBehaviour
 {
     [SerializeField] private BlockSystemInterface BlockSystem;
+    [SerializeField] private BuildingStyle buildingStyle;
 
     private bool isBlockSystemInitialized = false;
     [SerializeField] private string EmptyBlockName = "EmptyBlock";
@@ -54,14 +55,54 @@ public class BuildingGenerator : MonoBehaviour
 
         // Place the initial block
         BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, useRandomRotation: true);
-        if (BlockSystem.IsCellOccupied(StartingPosition))
+        CurrentCells.Add(StartingPosition);
+
+        while (true)
         {
-            Debug.Log($"Starting Block Placed at {StartingPosition}");
+            // Update FrontierCells list using CurrentCells
+            foreach (Vector3Int cell in CurrentCells)
+            {
+                List<Vector3Int> tempList = BlockSystem.GetEmptyNeighborCellPositions(cell);
+                foreach (Vector3Int position in tempList)
+                {
+                    if (!FrontierCells.Contains(position)) FrontierCells.Add(position);
+                }
+            }
+
+            foreach (Vector3Int cell in FrontierCells)
+            {
+                BuildingBlock newBlock = BlockSystem.FindValidBlockForPosition(cell, BuildingBlocksList, tryAllRotations: true, useRandomRotation: true);
+                
+            
+            }
         }
-        BlockSystem.GetEmptyNeighborCellPositions(StartingPosition);
     }
 
-    
+    public BuildingBlock FindValidBlockForPosition(Vector3Int position, List<BuildingBlock> candidateBlocks,
+                                                  bool tryAllRotations = true, bool useRandomRotation = false)
+    {
+        if (candidateBlocks == null || candidateBlocks.Count == 0)
+            return null;
+
+        if (BlockSystem.IsCellOccupied(position))
+        {
+            Debug.LogError("Tried to find a building block for an already occupied cell");
+        }
+
+        // Try each candidate block
+        foreach (BuildingBlock block in candidateBlocks)
+        {
+            // Check if this block is valid at this position
+            if (BlockSystem.IsBlockValidForPosition(block, position, tryAllRotations, useRandomRotation))
+            {
+                return block;
+            }
+        }
+
+        return null;
+    }
+
+
 
     // Update is called once per frame
     void Update()
