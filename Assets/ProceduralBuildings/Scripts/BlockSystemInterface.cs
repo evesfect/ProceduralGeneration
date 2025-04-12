@@ -428,5 +428,79 @@ public class BlockSystemInterface : MonoBehaviour
         return new List<string>();
     }
 
+
+    /// <summary>
+    /// Returns a list of the positions of the empty neighbouring cells from a position
+    /// </summary>
+    /// <param name="position"></param>
+    /// <returns></returns>
+    public List<Vector3Int> GetEmptyNeighborCellPositions(Vector3Int position)
+    {
+        List<Vector3Int> CellList = new List<Vector3Int>();
+
+        Vector3Int dimensions = GetGridDimensions();
+
+        if ((position.x - 1) >= 0)
+        {
+            Vector3Int tempPosition = new Vector3Int(position.x - 1, position.y, position.z);
+            if (!IsCellOccupied(tempPosition))
+            {
+                CellList.Add(tempPosition);
+            }
+        }
+
+        if ((position.x + 1) <= dimensions.x)
+        {
+            Vector3Int tempPosition = new Vector3Int(position.x + 1, position.y, position.z);
+            if (!IsCellOccupied(tempPosition))
+            {
+                CellList.Add(tempPosition);
+            }
+        }
+
+        if ((position.z - 1) >= 0)
+        {
+            Vector3Int tempPosition = new Vector3Int(position.x, position.y, position.z - 1);
+            if (!IsCellOccupied(tempPosition))
+            {
+                CellList.Add(tempPosition);
+            }
+        }
+
+        if ((position.z + 1) <= dimensions.z)
+        {
+            Vector3Int tempPosition = new Vector3Int(position.x, position.y, position.z + 1);
+            if (!IsCellOccupied(tempPosition))
+            {
+                CellList.Add(tempPosition);
+            }
+        }
+
+        if ((position.y - 1) >= 0)
+        {
+            Vector3Int tempPosition = new Vector3Int(position.x, position.y - 1, position.z);
+            if (!IsCellOccupied(tempPosition))
+            {
+                CellList.Add(tempPosition);
+            }
+        }
+
+        if ((position.y + 1) <= dimensions.y)
+        {
+            Vector3Int tempPosition = new Vector3Int(position.x, position.y + 1, position.z);
+            if (!IsCellOccupied(tempPosition))
+            {
+                CellList.Add(tempPosition);
+            }
+        }
+        
+        foreach(Vector3Int npos in CellList)
+        {
+            Debug.Log($"Empty neighbour cell found at location {npos}.");
+        }
+
+        return CellList;
+    }
+
     #endregion
 }
