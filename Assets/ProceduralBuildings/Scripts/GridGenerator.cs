@@ -766,19 +766,59 @@ public class GridGenerator : MonoBehaviour
     /// </summary>
     private bool AreSocketsCompatible(BuildingBlock blockData, Vector3Int position)
     {
-        // Get the building block's bottom socket
-        string blockBottomSocket = blockData.GetSocketForDirection(Direction.Down);
-
-        // Skip if the block doesn't have a bottom socket
-        if (string.IsNullOrEmpty(blockBottomSocket))
+        // First check all existing neighbors for compatibility
+        foreach (Direction direction in System.Enum.GetValues(typeof(Direction)))
         {
-            //Debug.Log("Block has no bottom socket defined, cannot place");
-            return false;
+            // Get the current block's socket for this direction
+            string blockSocket = blockData.GetSocketForDirection(direction);
+
+            // Skip directions with empty sockets (they connect to anything)
+            if (string.IsNullOrEmpty(blockSocket))
+                continue;
+
+            // Get neighbor position
+            Vector3Int neighborPos = GetNeighborPosition(position, direction);
+
+            // Skip if neighbor is out of grid bounds
+            if (!IsValidPosition(neighborPos))
+                continue;
+
+            // Skip if neighbor cell is not occupied
+            if (!grid[neighborPos.x, neighborPos.y, neighborPos.z].isOccupied)
+                continue;
+
+            // Get the neighbor's socket that would connect to our block
+            Direction oppositeDirection = GetOppositeDirection(direction);
+            int oppositeIndex = DirectionToIndex(oppositeDirection);
+
+            // Get the socket type from the neighbor
+            string neighborSocket = grid[neighborPos.x, neighborPos.y, neighborPos.z].sockets[oppositeIndex];
+
+            // Skip empty neighbor sockets
+            if (string.IsNullOrEmpty(neighborSocket))
+                continue;
+
+            // Check compatibility
+            if (!IsSocketCompatible(blockSocket, neighborSocket))
+            {
+                Debug.LogWarning($"Socket incompatible: {blockData.Name} at {position}, direction {direction} " +
+                               $"socket '{blockSocket}' doesn't connect with neighbor socket '{neighborSocket}'");
+                return false;
+            }
         }
 
         // CASE 1: Ground level (y=0) - Check against ground socket
         if (position.y == 0)
         {
+            // Get the building block's bottom socket
+            string blockBottomSocket = blockData.GetSocketForDirection(Direction.Down);
+
+            // Skip if the block doesn't have a bottom socket
+            if (string.IsNullOrEmpty(blockBottomSocket))
+            {
+                return true; // No bottom socket, so no ground compatibility needed
+            }
+
             // Get the current cell to check its ground socket
             GridCell currentCell = grid[position.x, position.y, position.z];
             string groundSocket = currentCell.sockets[DirectionToIndex(Direction.Down)];
@@ -788,60 +828,75 @@ public class GridGenerator : MonoBehaviour
             {
                 bool compatible = IsSocketCompatible(blockBottomSocket, groundSocket);
 
-                if (compatible)
+                if (!compatible)
                 {
-                    //Debug.Log($"Compatible with ground socket: {blockBottomSocket} connects with {groundSocket}");
-                    return true;
-                }
-                else
-                {
-                    //Debug.Log($"Incompatible with ground socket: {blockBottomSocket} does not connect with {groundSocket}");
+                    Debug.LogWarning($"Ground socket incompatible: {blockData.Name} with bottom socket '{blockBottomSocket}'" +
+                                   $" doesn't connect with ground socket '{groundSocket}'");
+                    return false;
                 }
             }
             else
             {
-                //Debug.Log("No ground socket found at this position");
+                // No ground socket, but block needs one
+                Debug.LogWarning($"No ground socket at position {position}, but block {blockData.Name} requires one");
+                return false;
             }
-
-            return false;
-        }
-
-        // CASE 2: Above ground - Check socket of cell below
-        Vector3Int belowPos = new Vector3Int(position.x, position.y - 1, position.z);
-
-        // Verify the position below is valid
-        if (!IsValidPosition(belowPos))
-        {
-            //Debug.Log("Position below is out of bounds, cannot place");
-            return false;
-        }
-
-        // Get the cell below
-        GridCell cellBelow = grid[belowPos.x, belowPos.y, belowPos.z];
-
-        // Get the top socket of the cell below
-        string belowTopSocket = cellBelow.sockets[DirectionToIndex(Direction.Up)];
-
-        // Skip if the cell below doesn't have a top socket
-        if (string.IsNullOrEmpty(belowTopSocket))
-        {
-            //Debug.Log("Cell below has no top socket, cannot place");
-            return false;
-        }
-
-        // Check compatibility
-        bool isCompatible = IsSocketCompatible(blockBottomSocket, belowTopSocket);
-
-        if (isCompatible)
-        {
-            //Debug.Log($"Compatible with cell below: {blockBottomSocket} connects with {belowTopSocket}");
         }
         else
         {
-            //Debug.Log($"Incompatible with cell below: {blockBottomSocket} does not connect with {belowTopSocket}");
+            // CASE 2: Above ground - Check socket of cell below if it's occupied
+            Vector3Int belowPos = new Vector3Int(position.x, position.y - 1, position.z);
+
+            // Verify the position below is valid
+            if (!IsValidPosition(belowPos))
+            {
+                // This shouldn't happen in normal building as we're checking a cell above ground
+                Debug.LogWarning($"Position below {position} is out of bounds");
+                return false;
+            }
+
+            // Get the building block's bottom socket
+            string blockBottomSocket = blockData.GetSocketForDirection(Direction.Down);
+
+            // Skip if the block doesn't have a bottom socket
+            if (string.IsNullOrEmpty(blockBottomSocket))
+            {
+                return true; // No bottom socket, so we're fine
+            }
+
+            // Get the cell below
+            GridCell cellBelow = grid[belowPos.x, belowPos.y, belowPos.z];
+
+            // If cell below is not occupied, we don't need to check compatibility
+            if (!cellBelow.isOccupied)
+            {
+                Debug.LogWarning($"Cell below {position} is not occupied, but block requires a bottom connection");
+                return false; // Block requires a bottom connection but there's nothing below
+            }
+
+            // Get the top socket of the cell below
+            string belowTopSocket = cellBelow.sockets[DirectionToIndex(Direction.Up)];
+
+            // Skip if the cell below doesn't have a top socket
+            if (string.IsNullOrEmpty(belowTopSocket))
+            {
+                Debug.LogWarning($"Cell below has no top socket, but block {blockData.Name} requires one");
+                return false;
+            }
+
+            // Check compatibility
+            bool isCompatible = IsSocketCompatible(blockBottomSocket, belowTopSocket);
+
+            if (!isCompatible)
+            {
+                Debug.LogWarning($"Bottom socket incompatible: {blockData.Name} with bottom socket '{blockBottomSocket}'" +
+                               $" doesn't connect with cell below's top socket '{belowTopSocket}'");
+                return false;
+            }
         }
 
-        return isCompatible;
+        // All sockets are compatible
+        return true;
     }
 
     /// <summary>
