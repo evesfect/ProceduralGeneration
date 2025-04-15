@@ -166,7 +166,7 @@ public class GridGenerator : MonoBehaviour
             if (renderer != null)
             {
                 cellSize = renderer.bounds.size;
-                Debug.Log($"Cell size calculated from prefab: {cellSize}");
+                ////Debug.Log($"Cell size calculated from prefab: {cellSize}");
             }
             else
             {
@@ -355,7 +355,7 @@ public class GridGenerator : MonoBehaviour
             }
         }
 
-        Debug.Log($"Grid initialized with dimensions {gridDimensions}");
+        //Debug.Log($"Grid initialized with dimensions {gridDimensions}");
     }
 
     /// <summary>
@@ -412,7 +412,7 @@ public class GridGenerator : MonoBehaviour
             int randomRotation = Random.Range(0, 4) * 90;
             ApplyHorizontalYRotation(blockDataClone, randomRotation);
             currentYRotation = randomRotation;
-            Debug.Log($"Applied random horizontal rotation of {randomRotation}°");
+            ////Debug.Log($"Applied random horizontal rotation of {randomRotation}°");
         }
 
         // Try to place the block with its current rotation
@@ -424,7 +424,7 @@ public class GridGenerator : MonoBehaviour
         // If auto rotation is enabled and initial placement failed, try other rotations
         if (enableAutoRotation || enableRandomRotation)
         {
-            Debug.Log($"Initial placement failed, trying other rotations");
+            ////Debug.Log($"Initial placement failed, trying other rotations");
 
             // Try all 4 horizontal rotations (skipping the one we already tried)
             Direction originalDownDirection = blockDataClone.DownDirection;
@@ -446,7 +446,7 @@ public class GridGenerator : MonoBehaviour
                 // Try to place with this rotation
                 if (TryPlaceBlockWithRotation(blockDataClone, gridPosition, yRotation))
                 {
-                    Debug.Log($"Successfully placed block after trying rotation {yRotation}°");
+                    ////Debug.Log($"Successfully placed block after trying rotation {yRotation}°");
                     return true;
                 }
             }
@@ -520,7 +520,7 @@ public class GridGenerator : MonoBehaviour
         // Choose a random horizontal rotation (0, 90, 180, or 270 degrees)
         int randomRotation = Random.Range(0, 4) * 90;
         ApplyHorizontalYRotation(blockData, randomRotation);
-        Debug.Log($"Applied random horizontal rotation of {randomRotation}°");
+        //Debug.Log($"Applied random horizontal rotation of {randomRotation}°");
     }
 
     /// <summary>
@@ -609,7 +609,7 @@ public class GridGenerator : MonoBehaviour
                 cellWorldPosition.z + (cellSize.z / 2f)  // Center Z
             );
 
-            Debug.Log($"Building block '{blockData.Name}' aligned at {blockObject.transform.position} with Y rotation {yRotationDegrees}°");
+            //Debug.Log($"Building block '{blockData.Name}' aligned at {blockObject.transform.position} with Y rotation {yRotationDegrees}°");
         }
         else
         {
@@ -772,7 +772,7 @@ public class GridGenerator : MonoBehaviour
         // Skip if the block doesn't have a bottom socket
         if (string.IsNullOrEmpty(blockBottomSocket))
         {
-            Debug.Log("Block has no bottom socket defined, cannot place");
+            //Debug.Log("Block has no bottom socket defined, cannot place");
             return false;
         }
 
@@ -790,17 +790,17 @@ public class GridGenerator : MonoBehaviour
 
                 if (compatible)
                 {
-                    Debug.Log($"Compatible with ground socket: {blockBottomSocket} connects with {groundSocket}");
+                    //Debug.Log($"Compatible with ground socket: {blockBottomSocket} connects with {groundSocket}");
                     return true;
                 }
                 else
                 {
-                    Debug.Log($"Incompatible with ground socket: {blockBottomSocket} does not connect with {groundSocket}");
+                    //Debug.Log($"Incompatible with ground socket: {blockBottomSocket} does not connect with {groundSocket}");
                 }
             }
             else
             {
-                Debug.Log("No ground socket found at this position");
+                //Debug.Log("No ground socket found at this position");
             }
 
             return false;
@@ -812,7 +812,7 @@ public class GridGenerator : MonoBehaviour
         // Verify the position below is valid
         if (!IsValidPosition(belowPos))
         {
-            Debug.Log("Position below is out of bounds, cannot place");
+            //Debug.Log("Position below is out of bounds, cannot place");
             return false;
         }
 
@@ -825,7 +825,7 @@ public class GridGenerator : MonoBehaviour
         // Skip if the cell below doesn't have a top socket
         if (string.IsNullOrEmpty(belowTopSocket))
         {
-            Debug.Log("Cell below has no top socket, cannot place");
+            //Debug.Log("Cell below has no top socket, cannot place");
             return false;
         }
 
@@ -834,11 +834,11 @@ public class GridGenerator : MonoBehaviour
 
         if (isCompatible)
         {
-            Debug.Log($"Compatible with cell below: {blockBottomSocket} connects with {belowTopSocket}");
+            //Debug.Log($"Compatible with cell below: {blockBottomSocket} connects with {belowTopSocket}");
         }
         else
         {
-            Debug.Log($"Incompatible with cell below: {blockBottomSocket} does not connect with {belowTopSocket}");
+            //Debug.Log($"Incompatible with cell below: {blockBottomSocket} does not connect with {belowTopSocket}");
         }
 
         return isCompatible;
@@ -960,7 +960,7 @@ public class GridGenerator : MonoBehaviour
             }
         }
 
-        Debug.Log($"Cleared cell at {gridPosition} while preserving sockets for occupied neighbors");
+        //Debug.Log($"Cleared cell at {gridPosition} while preserving sockets for occupied neighbors");
     }
 
     /// <summary>

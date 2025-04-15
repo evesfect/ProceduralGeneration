@@ -53,7 +53,7 @@ MonoBehaviour:
     Prefab: {fileID: 2881119585392261291, guid: ecc33320e2cf0c84b8a3ce5bc1415f88, type: 3}
     DownDirection: 5
     TopSocket: Roof_A
-    BottomSocket: Roof_Side
+    BottomSocket: Uncompatible
     FrontSocket: Roof_Side
     BackSocket: Roof_Side
     LeftSocket: Uncompatible

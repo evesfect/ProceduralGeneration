@@ -449,7 +449,7 @@ public class BlockSystemInterface : MonoBehaviour
             }
         }
 
-        if ((position.x + 1) <= dimensions.x)
+        if ((position.x + 1) < dimensions.x)
         {
             Vector3Int tempPosition = new Vector3Int(position.x + 1, position.y, position.z);
             if (!IsCellOccupied(tempPosition))
@@ -467,7 +467,7 @@ public class BlockSystemInterface : MonoBehaviour
             }
         }
 
-        if ((position.z + 1) <= dimensions.z)
+        if ((position.z + 1) < dimensions.z)
         {
             Vector3Int tempPosition = new Vector3Int(position.x, position.y, position.z + 1);
             if (!IsCellOccupied(tempPosition))
@@ -485,7 +485,7 @@ public class BlockSystemInterface : MonoBehaviour
             }
         }
 
-        if ((position.y + 1) <= dimensions.y)
+        if ((position.y + 1) < dimensions.y)
         {
             Vector3Int tempPosition = new Vector3Int(position.x, position.y + 1, position.z);
             if (!IsCellOccupied(tempPosition))
