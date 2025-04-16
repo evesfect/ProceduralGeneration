@@ -131,24 +131,32 @@ public class BlockSystemInterface : MonoBehaviour
     #region Block Placement
 
     /// <summary>
-    /// Place a building block in the grid at the specified position
+    /// Check if a building block can be placed at a specific position
     /// </summary>
-    /// <param name="blockName">Name of the building block from BuildingBlocksManager</param>
-    /// <param name="position">Grid position to place the block</param>
-    /// <param name="tryAllRotations">Whether to try all rotations to find a valid placement</param>
-    /// <param name="useRandomRotation">Whether to use random rotation for initial placement attempt</param>
-    /// <returns>True if placement was successful</returns>
-    public bool PlaceBlock(string blockName, Vector3Int position, bool tryAllRotations = false, bool useRandomRotation = false)
+    /// <param name="block">Building block to check</param>
+    /// <param name="position">Grid position to check</param>
+    /// <param name="tryAllRotations">Whether to try all rotations</param>
+    /// <param name="useRandomRotation">Whether to use random rotation</param>
+    /// <returns>True if the block can be placed, along with the valid rotation</returns>
+    public (bool isValid, int rotation) CheckBlockValidForPosition(BuildingBlock block, Vector3Int position,
+                                                     bool tryAllRotations = true, bool useRandomRotation = false)
     {
-        // Find the building block
-        BuildingBlock block = buildingBlocksManager.FindBuildingBlock(blockName);
-        if (block == null)
-        {
-            Debug.LogWarning($"BlockSystemInterface: Block '{blockName}' not found");
-            return false;
-        }
+        // If the cell is already occupied, it's not valid
+        if (IsCellOccupied(position))
+            return (false, 0);
 
-        return PlaceBlock(block, position, tryAllRotations, useRandomRotation);
+        // Use GridGenerator's TestBlockPlacement method directly
+        return gridGenerator.TestBlockPlacement(block, position, tryAllRotations, useRandomRotation);
+    }
+
+    /// <summary>
+    /// Check if a building block can be placed at a specific position
+    /// </summary>
+    /// <returns>True if the block can be placed at the position</returns>
+    public bool IsBlockValidForPosition(BuildingBlock block, Vector3Int position,
+                                       bool tryAllRotations = true, bool useRandomRotation = false)
+    {
+        return CheckBlockValidForPosition(block, position, tryAllRotations, useRandomRotation).isValid;
     }
 
     /// <summary>
@@ -161,22 +169,27 @@ public class BlockSystemInterface : MonoBehaviour
     /// <returns>True if placement was successful</returns>
     public bool PlaceBlock(BuildingBlock block, Vector3Int position, bool tryAllRotations = false, bool useRandomRotation = false)
     {
-        // Cache original rotation settings
-        bool originalAutoRotation = gridGenerator.enableAutoRotation;
-        bool originalRandomRotation = gridGenerator.enableRandomRotation;
+        // If the block already has a known valid rotation from validation
+        if (block.CurrentRotation != 0)
+        {
+            // Place with the specific rotation
+            Debug.Log($"Using pre-determined rotation: {block.CurrentRotation}°");
+            return gridGenerator.PutInCell(block, position, block.CurrentRotation);
+        }
 
-        // Apply temporary settings
-        gridGenerator.enableAutoRotation = tryAllRotations;
-        gridGenerator.enableRandomRotation = useRandomRotation;
+        // Test placement first to find valid rotation
+        var (success, rotation) = gridGenerator.TestBlockPlacement(block, position, tryAllRotations, useRandomRotation);
 
-        // Try to place the block
-        bool success = gridGenerator.PutInCell(block, position);
+        if (success)
+        {
+            // Save the working rotation for potential future use
+            block.CurrentRotation = rotation;
 
-        // Restore original settings
-        gridGenerator.enableAutoRotation = originalAutoRotation;
-        gridGenerator.enableRandomRotation = originalRandomRotation;
+            // Place with the identified working rotation
+            return gridGenerator.PutInCell(block, position, rotation);
+        }
 
-        return success;
+        return false;
     }
 
     /// <summary>
@@ -187,76 +200,6 @@ public class BlockSystemInterface : MonoBehaviour
         gridGenerator.ClearCell(position);
     }
 
-    /// <summary>
-    /// Try to find a valid building block for a specific grid position
-    /// </summary>
-    /// <param name="position">Grid position to check</param>
-    /// <param name="candidateBlocks">List of building blocks to try</param>
-    /// <param name="tryAllRotations">Whether to try all rotations for each block</param>
-    /// <param name="useRandomRotation">Whether to use random rotation for initial attempt</param>
-    /// <returns>The first valid building block or null if none found</returns>
-    public BuildingBlock FindValidBlockForPosition(Vector3Int position, List<BuildingBlock> candidateBlocks,
-                                                  bool tryAllRotations = true, bool useRandomRotation = false)
-    {
-        if (candidateBlocks == null || candidateBlocks.Count == 0)
-            return null;
-
-        // If the cell is already occupied, it's not valid
-        if (IsCellOccupied(position))
-            return null;
-
-        // Try each candidate block
-        foreach (BuildingBlock block in candidateBlocks)
-        {
-            // Check if this block is valid at this position
-            if (IsBlockValidForPosition(block, position, tryAllRotations, useRandomRotation))
-            {
-                return block;
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Check if a building block can be placed at a specific position
-    /// </summary>
-    /// <param name="block">Building block to check</param>
-    /// <param name="position">Grid position to check</param>
-    /// <param name="tryAllRotations">Whether to try all rotations</param>
-    /// <param name="useRandomRotation">Whether to use random rotation</param>
-    /// <returns>True if the block can be placed at the position</returns>
-    public bool IsBlockValidForPosition(BuildingBlock block, Vector3Int position,
-                                       bool tryAllRotations = true, bool useRandomRotation = false)
-    {
-        // If the cell is already occupied, it's not valid
-        if (IsCellOccupied(position))
-            return false;
-
-        // We need to check if the block would fit, but without actually placing it
-        // This is a bit tricky without implementing the internal logic of GridGenerator
-
-        // Easiest approach: simulate the placement in a temp grid, then clear the cell
-        bool originalAutoRotation = gridGenerator.enableAutoRotation;
-        bool originalRandomRotation = gridGenerator.enableRandomRotation;
-
-        gridGenerator.enableAutoRotation = tryAllRotations;
-        gridGenerator.enableRandomRotation = useRandomRotation;
-
-        bool canPlace = gridGenerator.PutInCell(block, position);
-
-        if (canPlace)
-        {
-            // Clear the cell if we successfully placed it
-            gridGenerator.ClearCell(position);
-        }
-
-        // Restore original settings
-        gridGenerator.enableAutoRotation = originalAutoRotation;
-        gridGenerator.enableRandomRotation = originalRandomRotation;
-
-        return canPlace;
-    }
 
     #endregion
 

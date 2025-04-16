@@ -12,7 +12,7 @@ public class BuildingGenerator : MonoBehaviour
     [SerializeField] private Vector3Int StartingPosition = new Vector3Int(0, 0, 0);
 
     private HashSet<Vector3Int> invalidCells = new HashSet<Vector3Int>();
-
+    private Dictionary<BuildingBlock, int> blockRotations = new Dictionary<BuildingBlock, int>();
     void Start()
     {
         if (BlockSystem == null) {
@@ -30,7 +30,7 @@ public class BuildingGenerator : MonoBehaviour
             Debug.LogError("Failed to initialize block system.");
         } else
         {
-            Debug.Log("Initialized block system.");
+            //Debug.Log("Initialized block system.");
         }
         GenerateBuilding();
     }
@@ -70,7 +70,7 @@ public class BuildingGenerator : MonoBehaviour
         {
             if (CurrentCells.Count == 0)
             {
-                Debug.Log("CurrentCells count is 0, terminating generation");
+                //Debug.Log("CurrentCells count is 0, terminating generation");
                 break;
             }
             if (iteration < iterationLimit)
@@ -79,7 +79,7 @@ public class BuildingGenerator : MonoBehaviour
             }
             else
             {
-                Debug.Log($"Iteration limit reached: {iterationLimit}");
+                Debug.LogWarning($"Iteration limit reached: {iterationLimit}");
                 break;
             }
             
@@ -113,7 +113,7 @@ public class BuildingGenerator : MonoBehaviour
                 BuildingBlock newBlock = FindValidBlockForPosition(cell, BuildingBlocksList, tryAllRotations: true, useRandomRotation: true);
                 if(newBlock == null)
                 {
-                    Debug.Log($"Couldn't find a valid block for the cell {cell}");
+                    //Debug.Log($"Couldn't find a valid block for the cell {cell}");
                     invalidCells.Add(cell);
                     continue;
                 }
@@ -124,15 +124,15 @@ public class BuildingGenerator : MonoBehaviour
                 
             
             }
-            Debug.Log("Completed an iteration. Values before swapping:");
-            Debug.Log($"CurrentCells count is {CurrentCells.Count}");
-            Debug.Log($"FrontierCells count is {FrontierCells.Count}");
+            //Debug.Log("Completed an iteration. Values before swapping:");
+            //Debug.Log($"CurrentCells count is {CurrentCells.Count}");
+            //Debug.Log($"FrontierCells count is {FrontierCells.Count}");
             
             CurrentCells = new List<Vector3Int>(FrontierCells);
             FrontierCells.Clear();
 
-            Debug.Log($"CurrentCells count after swap is {CurrentCells.Count}");
-            Debug.Log($"FrontierCells count after swap is {FrontierCells.Count}");
+            //Debug.Log($"CurrentCells count after swap is {CurrentCells.Count}");
+            //Debug.Log($"FrontierCells count after swap is {FrontierCells.Count}");
 
         }
     }
@@ -140,58 +140,81 @@ public class BuildingGenerator : MonoBehaviour
     /// <summary>
     /// Finds candidate blocks for the cell and then chooses one using the weight values
     /// </summary>
-    /// <param name="position"></param>
-    /// <param name="candidateBlocks"></param>
-    /// <param name="tryAllRotations"></param>
-    /// <param name="useRandomRotation"></param>
-    /// <returns></returns>
     public BuildingBlock FindValidBlockForPosition(Vector3Int position, List<BuildingBlock> candidateBlocks,
                                                   bool tryAllRotations = true, bool useRandomRotation = false)
     {
         if (candidateBlocks == null || candidateBlocks.Count == 0)
             return null;
 
-        List<BuildingBlock> validCandidateBlocks = new List<BuildingBlock>();
+        List<(BuildingBlock block, int rotation, float weight)> validBlocks = new List<(BuildingBlock, int, float)>();
+        float totalWeightSum = 0f;
 
         if (BlockSystem.IsCellOccupied(position))
         {
             Debug.LogError("Tried to find a building block for an already occupied cell");
+            return null;
         }
 
-        float totalWeightSum = 0f;
-
-        // Try each candidate block
+        // Find all valid blocks and their rotations
         foreach (BuildingBlock block in candidateBlocks)
         {
-            // Check if this block is valid at this position
-            if (BlockSystem.IsBlockValidForPosition(block, position, tryAllRotations, useRandomRotation))
+            var (isValid, rotation) = BlockSystem.CheckBlockValidForPosition(
+                block, position, tryAllRotations, useRandomRotation);
+
+            if (isValid)
             {
-                validCandidateBlocks.Add(block);
-                totalWeightSum += BStyle.GetWeight(block.Name);
+                float weight = BStyle.GetWeight(block.Name);
+                validBlocks.Add((block, rotation, weight));
+                totalWeightSum += weight;
+                Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight}");
             }
         }
 
-        if (validCandidateBlocks.Count <= 0)
+        if (validBlocks.Count <= 0)
         {
             Debug.Log($"Couldn't find a valid block for the cell {position}");
             return null;
         }
 
-        float currentWeightSum = 0f;
+        // Choose a block based on weights
         float randomLimiter = Random.Range(0f, totalWeightSum);
-        foreach(BuildingBlock block in validCandidateBlocks)
+        float currentWeightSum = 0f;
+
+        foreach (var (block, rotation, weight) in validBlocks)
         {
-            currentWeightSum += BStyle.GetWeight(block.Name);
+            currentWeightSum += weight;
             if (currentWeightSum >= randomLimiter)
             {
-                Debug.Log($"{block.Name} is chosen with {BStyle.GetWeight(block.Name) / totalWeightSum * 100}% chance.");
-                return block;
+                Debug.Log($"{block.Name} is chosen with {weight / totalWeightSum * 100}% chance. Will be placed with rotation {rotation}°");
+
+                // Store rotation in the block for later use
+                BuildingBlock selectedBlock = CloneBlock(block);
+                selectedBlock.CurrentRotation = rotation;
+                return selectedBlock;
             }
         }
-        Debug.Log("Something went wrong while choosing a block for the cell.");
+
+        Debug.LogError("Something went wrong while choosing a block for the cell.");
         return null;
     }
 
+    // Helper to clone a block with its successful rotation
+    private BuildingBlock CloneBlock(BuildingBlock original)
+    {
+        return new BuildingBlock
+        {
+            Name = original.Name,
+            Prefab = original.Prefab,
+            DownDirection = original.DownDirection,
+            TopSocket = original.TopSocket,
+            BottomSocket = original.BottomSocket,
+            FrontSocket = original.FrontSocket,
+            BackSocket = original.BackSocket,
+            LeftSocket = original.LeftSocket,
+            RightSocket = original.RightSocket,
+            CurrentRotation = original.CurrentRotation
+        };
+    }
 
 
     // Update is called once per frame

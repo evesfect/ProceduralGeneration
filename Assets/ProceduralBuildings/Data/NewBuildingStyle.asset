@@ -23,4 +23,4 @@ MonoBehaviour:
   - blockName: Block_WindowLarge
     weight: 1
   - blockName: Roof_C1_A_1type
-    weight: 1
+    weight: 5

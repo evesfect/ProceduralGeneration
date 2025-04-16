@@ -33,10 +33,35 @@ public class ManualBlockPlacer : MonoBehaviour
     private bool useRandomRotation = false;
     private bool useAutoRotation = false;
 
+    // Manual rotation control
+    private bool useManualRotation = false;
+    private int manualRotationAngle = 0;
+
+    // Testing variables
+    private List<PlacementTest> placementTests = new List<PlacementTest>();
+
+    // Placement test result struct for debugging
+    private class PlacementTest
+    {
+        public string blockName;
+        public Vector3Int position;
+        public bool success;
+        public int rotation;
+        public bool usedRandomRotation;
+        public bool usedAutoRotation;
+
+        public override string ToString()
+        {
+            return $"{blockName} at {position}: {(success ? "Success" : "Failed")} - Rotation: {rotation}° " +
+                   $"(Random: {usedRandomRotation}, Auto: {usedAutoRotation})";
+        }
+    }
+
     // UI Styles
     private GUIStyle titleStyle;
     private GUIStyle headerStyle;
     private GUIStyle boxStyle;
+    private GUIStyle testResultStyle;
 
     private void Start()
     {
@@ -116,6 +141,13 @@ public class ManualBlockPlacer : MonoBehaviour
             boxStyle = new GUIStyle(GUI.skin.box);
             boxStyle.padding = new RectOffset(10, 10, 10, 10);
         }
+
+        if (testResultStyle == null)
+        {
+            testResultStyle = new GUIStyle(GUI.skin.label);
+            testResultStyle.normal.textColor = Color.green;
+            testResultStyle.fontSize = 10;
+        }
     }
 
     private void DrawBlockPlacerWindow(int windowID)
@@ -178,6 +210,7 @@ public class ManualBlockPlacer : MonoBehaviour
             if (useRandomRotation)
             {
                 gridGenerator.enableRandomRotation = true;
+                useManualRotation = false; // Disable manual rotation when random is enabled
             }
             else if (gridGenerator.enableRandomRotation)
             {
@@ -193,6 +226,39 @@ public class ManualBlockPlacer : MonoBehaviour
             // Sync with grid generator
             gridGenerator.enableAutoRotation = useAutoRotation;
         }
+
+        // Manual rotation toggle and angle
+        GUI.enabled = !useRandomRotation;
+        bool newManualRotation = GUILayout.Toggle(useManualRotation, "Use Manual Rotation");
+        if (newManualRotation != useManualRotation)
+        {
+            useManualRotation = newManualRotation;
+            if (useManualRotation)
+            {
+                useRandomRotation = false;
+                gridGenerator.enableRandomRotation = false;
+            }
+        }
+
+        if (useManualRotation)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Rotation Angle: ", GUILayout.Width(100));
+
+            if (GUILayout.Button("0°", GUILayout.Width(40)))
+                manualRotationAngle = 0;
+            if (GUILayout.Button("90°", GUILayout.Width(40)))
+                manualRotationAngle = 90;
+            if (GUILayout.Button("180°", GUILayout.Width(40)))
+                manualRotationAngle = 180;
+            if (GUILayout.Button("270°", GUILayout.Width(40)))
+                manualRotationAngle = 270;
+
+            GUILayout.EndHorizontal();
+
+            GUILayout.Label($"Current manual rotation: {manualRotationAngle}°");
+        }
+        GUI.enabled = true;
 
         GUILayout.EndVertical();
 
@@ -263,7 +329,47 @@ public class ManualBlockPlacer : MonoBehaviour
                 PlaceSelectedBlock();
             }
         }
+
+        // Test placement without placing
+        if (GUILayout.Button("Test Block Placement (Highlights Valid Cells)"))
+        {
+            if (blockNames.Length > 0)
+            {
+                TestSelectedBlockPlacement();
+            }
+        }
+
+        // Rotation test - Place blocks with different rotation settings
+        if (GUILayout.Button("Run Rotation Test"))
+        {
+            if (blockNames.Length > 0)
+            {
+                RunRotationTest();
+            }
+        }
         GUI.enabled = true;
+
+        // Display test results
+        if (placementTests.Count > 0)
+        {
+            GUILayout.Space(10);
+            GUILayout.Label("Rotation Test Results:", headerStyle);
+            GUILayout.BeginVertical(boxStyle);
+
+            foreach (var test in placementTests)
+            {
+                GUIStyle style = new GUIStyle(testResultStyle);
+                style.normal.textColor = test.success ? Color.green : Color.red;
+                GUILayout.Label(test.ToString(), style);
+            }
+
+            if (GUILayout.Button("Clear Test Results"))
+            {
+                placementTests.Clear();
+            }
+
+            GUILayout.EndVertical();
+        }
 
         // Hide button
         GUILayout.Space(10);
@@ -290,7 +396,28 @@ public class ManualBlockPlacer : MonoBehaviour
 
         // Try to place the block
         BuildingBlock selectedBlock = gridGenerator.buildingBlocksManager.BuildingBlocks[selectedBlockIndex];
-        bool success = gridGenerator.PutInCell(selectedBlock, targetPosition);
+        bool success;
+
+        if (useManualRotation)
+        {
+            // Use manual rotation
+            success = gridGenerator.PutInCell(selectedBlock, targetPosition, manualRotationAngle);
+        }
+        else
+        {
+            // Use the GridGenerator's test and place logic
+            var (testSuccess, rotation) = gridGenerator.TestBlockPlacement(
+                selectedBlock, targetPosition, useAutoRotation, useRandomRotation);
+
+            if (testSuccess)
+            {
+                success = gridGenerator.PutInCell(selectedBlock, targetPosition, rotation);
+            }
+            else
+            {
+                success = false;
+            }
+        }
 
         // Restore the original settings
         gridGenerator.enableRandomRotation = originalRandomRotation;
@@ -304,6 +431,109 @@ public class ManualBlockPlacer : MonoBehaviour
         {
             Debug.LogWarning($"Failed to place {selectedBlock.Name} at {targetPosition}");
         }
+    }
+
+    private void TestSelectedBlockPlacement()
+    {
+        if (blockNames.Length == 0 || selectedBlockIndex < 0 || selectedBlockIndex >= blockNames.Length)
+            return;
+
+        BuildingBlock selectedBlock = gridGenerator.buildingBlocksManager.BuildingBlocks[selectedBlockIndex];
+
+        // Test the block placement without actually placing it
+        var (success, rotation) = gridGenerator.TestBlockPlacement(
+            selectedBlock, targetPosition, useAutoRotation, useRandomRotation);
+
+        if (success)
+        {
+            Debug.Log($"Block {selectedBlock.Name} can be placed at {targetPosition} with rotation {rotation}°");
+            // Add to test results
+            placementTests.Add(new PlacementTest
+            {
+                blockName = selectedBlock.Name,
+                position = targetPosition,
+                success = true,
+                rotation = rotation,
+                usedRandomRotation = useRandomRotation,
+                usedAutoRotation = useAutoRotation
+            });
+        }
+        else
+        {
+            Debug.LogWarning($"Block {selectedBlock.Name} cannot be placed at {targetPosition}");
+            // Add to test results
+            placementTests.Add(new PlacementTest
+            {
+                blockName = selectedBlock.Name,
+                position = targetPosition,
+                success = false,
+                rotation = 0,
+                usedRandomRotation = useRandomRotation,
+                usedAutoRotation = useAutoRotation
+            });
+        }
+    }
+
+    private void RunRotationTest()
+    {
+        if (blockNames.Length == 0 || selectedBlockIndex < 0 || selectedBlockIndex >= blockNames.Length)
+            return;
+
+        BuildingBlock selectedBlock = gridGenerator.buildingBlocksManager.BuildingBlocks[selectedBlockIndex];
+        placementTests.Clear();
+
+        // Clear the test cell first
+        gridGenerator.ClearCell(targetPosition);
+
+        // Test 1: Random rotation with auto rotation (should succeed if any rotation works)
+        var (randomAutoSuccess, randomAutoRotation) = gridGenerator.TestBlockPlacement(
+            selectedBlock, targetPosition, true, true);
+
+        placementTests.Add(new PlacementTest
+        {
+            blockName = selectedBlock.Name,
+            position = targetPosition,
+            success = randomAutoSuccess,
+            rotation = randomAutoRotation,
+            usedRandomRotation = true,
+            usedAutoRotation = true
+        });
+
+        // Test 2: Specific rotations (0, 90, 180, 270)
+        for (int angle = 0; angle < 360; angle += 90)
+        {
+            // Clear the test cell first
+            gridGenerator.ClearCell(targetPosition);
+
+            // Clone the block data to prevent modifying the original
+            BuildingBlock blockClone = new BuildingBlock
+            {
+                Name = selectedBlock.Name,
+                Prefab = selectedBlock.Prefab,
+                DownDirection = selectedBlock.DownDirection,
+                TopSocket = selectedBlock.TopSocket,
+                BottomSocket = selectedBlock.BottomSocket,
+                FrontSocket = selectedBlock.FrontSocket,
+                BackSocket = selectedBlock.BackSocket,
+                LeftSocket = selectedBlock.LeftSocket,
+                RightSocket = selectedBlock.RightSocket
+            };
+
+            // Apply the specified rotation
+            bool success = gridGenerator.PutInCell(blockClone, targetPosition, angle);
+
+            placementTests.Add(new PlacementTest
+            {
+                blockName = selectedBlock.Name,
+                position = targetPosition,
+                success = success,
+                rotation = angle,
+                usedRandomRotation = false,
+                usedAutoRotation = false
+            });
+        }
+
+        Debug.Log("Rotation test completed. Check the results in the UI.");
     }
 
     // Method to show the window (can be called from other scripts)

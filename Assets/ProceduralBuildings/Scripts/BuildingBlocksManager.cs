@@ -10,6 +10,7 @@ public class BuildingBlock
     public string Name;
     public GameObject Prefab;
     public Direction DownDirection = Direction.Down; // The actual down direction of the prefab
+    public int CurrentRotation = 0;
 
     // Socket assignments for each direction
     public string TopSocket;
