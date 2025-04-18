@@ -9,6 +9,14 @@ public class BuildingStyle : ScriptableObject
     {
         public string blockName;
         public float weight = 1.0f;
+
+        // Height-based weight curve
+        public bool enableHeightFactor = false;
+        public AnimationCurve heightCurve = AnimationCurve.Linear(0, 1, 1, 1); // Default: no change
+
+        // Distance-from-center based weight curve
+        public bool enableDistanceFactor = false;
+        public AnimationCurve distanceCurve = AnimationCurve.Linear(0, 1, 1, 1); // Default: no change
     }
 
     public string styleName = "Default Style";
@@ -64,13 +72,31 @@ public class BuildingStyle : ScriptableObject
 #endif
     }
 
-    // Get weight for a block by name
-    public float GetWeight(string blockName)
+    // Enhanced GetWeight method that takes spatial parameters
+    public float GetWeight(string blockName, float normalizedHeight = 0f, float normalizedDistance = 0f)
     {
         foreach (var entry in blockWeights)
         {
             if (entry.blockName == blockName)
-                return entry.weight;
+            {
+                float finalWeight = entry.weight;
+
+                // Apply height factor if enabled
+                if (entry.enableHeightFactor)
+                {
+                    float heightMultiplier = entry.heightCurve.Evaluate(normalizedHeight);
+                    finalWeight *= heightMultiplier;
+                }
+
+                // Apply distance factor if enabled
+                if (entry.enableDistanceFactor)
+                {
+                    float distanceMultiplier = entry.distanceCurve.Evaluate(normalizedDistance);
+                    finalWeight *= distanceMultiplier;
+                }
+
+                return finalWeight;
+            }
         }
         return 1.0f; // Default weight if not found
     }

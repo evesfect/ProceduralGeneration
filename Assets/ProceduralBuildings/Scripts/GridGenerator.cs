@@ -393,7 +393,7 @@ public class GridGenerator : MonoBehaviour
         if (useRandomRotation)
         {
             startRotation = Random.Range(0, 4) * 90;
-            Debug.Log($"Using random starting rotation: {startRotation}°");
+            //Debug.Log($"Using random starting rotation: {startRotation}°");
         }
 
         // If we're trying all rotations, create an array of all possible rotations
@@ -424,12 +424,12 @@ public class GridGenerator : MonoBehaviour
             // Test if the block fits with this rotation
             if (AreSocketsCompatible(blockDataClone, gridPosition))
             {
-                Debug.Log($"Block placement successful at {gridPosition} with rotation {yRotation}°");
+                //Debug.Log($"Block placement successful at {gridPosition} with rotation {yRotation}°");
                 return (true, yRotation);
             }
         }
 
-        Debug.LogWarning($"Block placement failed at {gridPosition} - no valid rotation found");
+        //Debug.Log($"Block placement failed at {gridPosition} - no valid rotation found");
         return (false, 0);
     }
 
@@ -802,7 +802,7 @@ public class GridGenerator : MonoBehaviour
             }
         }
 
-        Debug.Log($"Applied horizontal Y rotation: {yRotationDegrees}° for block with down direction: {blockData.DownDirection}");
+        //Debug.Log($"Applied horizontal Y rotation: {yRotationDegrees}° for block with down direction: {blockData.DownDirection}");
     }
 
     /// <summary>
@@ -1229,7 +1229,6 @@ public class GridGenerator : MonoBehaviour
             // If cell below is not occupied, we don't need to check compatibility
             if (!cellBelow.isOccupied)
             {
-                Debug.LogWarning($"Cell below {position} is not occupied, but block requires a bottom connection");
                 return false; // Block requires a bottom connection but there's nothing below
             }
 

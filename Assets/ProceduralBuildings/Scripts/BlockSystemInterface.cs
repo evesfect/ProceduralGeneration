@@ -439,7 +439,7 @@ public class BlockSystemInterface : MonoBehaviour
         
         foreach(Vector3Int npos in CellList)
         {
-            Debug.Log($"Empty neighbour cell found at location {npos}.");
+            //Debug.Log($"Empty neighbour cell found at location {npos}.");
         }
 
         return CellList;
