@@ -166,62 +166,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &97342512
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 97342514}
-  - component: {fileID: 97342513}
-  m_Layer: 0
-  m_Name: RuleVisualizer
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &97342513
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 97342512}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ba24bd98a21f3a44893cd7f6bb67537, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  blockSystem: {fileID: 76781207}
-  ruleManager: {fileID: 11400000, guid: c552ed3cd4e6e8041a6b196561031435, type: 2}
-  validColor: {r: 0, g: 1, b: 0, a: 0.5}
-  invalidColor: {r: 1, g: 0, b: 0, a: 0.5}
-  conflictColor: {r: 1, g: 0.5, b: 0, a: 0.5}
-  sizeMultiplier: 1.2
-  testPosition: {x: 0, y: 0, z: 0}
-  testBlockIndex: 0
-  enableVisualization: 1
-  testRotation: 0
-  tryAllRotations: 1
-  validRotation: 0
---- !u!4 &97342514
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 97342512}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 41.731953, y: 1.485175, z: 38.347298}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -548,7 +492,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 505918486}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 44.967793, y: -3.887137, z: 47.554676}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -584,7 +528,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5094123d43343194284a91f96c25943b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridDimensions: {x: 4, y: 3, z: 4}
+  gridDimensions: {x: 10, y: 4, z: 10}
   cellSizePrefab: {fileID: 2616496724786896443, guid: a8f5a801e9cb3c148872b35aad0365d1, type: 3}
   gridOrigin: {fileID: 1050012403}
   groundSocketType: ground
@@ -593,13 +537,19 @@ MonoBehaviour:
   enableAutoRotation: 0
   buildingBlocksManager: {fileID: 11400000, guid: 8a0c0ab3ae70cb14d87cbc4b5cdc5cfb, type: 2}
   socketManager: {fileID: 11400000, guid: 7891506dfb7460c4aa40d88fa2896917, type: 2}
-  showGridGizmos: 1
-  showSocketGizmos: 1
+  showGridGizmos: 0
+  showSocketGizmos: 0
   groundCellRows:
-  - cells: 01010101
-  - cells: 01010101
-  - cells: 01010101
-  - cells: 01010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
 --- !u!4 &618881659
 Transform:
   m_ObjectHideFlags: 0
@@ -787,11 +737,10 @@ MonoBehaviour:
   BStyle: {fileID: 11400000, guid: c7b56c91aff16c5488964947de810278, type: 2}
   EmptyBlockName: EmptyBlock
   StartingPosition: {x: 1, y: 0, z: 1}
-  placementDelay: 0.3
+  placementDelay: 0.01
   enableDelayedPlacement: 1
-  CenterPosition: {x: 1, y: 1}
+  CenterPosition: {x: 5, y: 5}
   MaxDistance: 10
-  ruleManager: {fileID: 11400000, guid: c552ed3cd4e6e8041a6b196561031435, type: 2}
 --- !u!4 &1431131506
 Transform:
   m_ObjectHideFlags: 0
@@ -912,6 +861,5 @@ SceneRoots:
   - {fileID: 618881659}
   - {fileID: 1050012403}
   - {fileID: 76781208}
-  - {fileID: 505918488}
   - {fileID: 1431131506}
-  - {fileID: 97342514}
+  - {fileID: 505918488}
