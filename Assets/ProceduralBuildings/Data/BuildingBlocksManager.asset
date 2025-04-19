@@ -16,6 +16,7 @@ MonoBehaviour:
   - Name: Block_WindowSmall
     Prefab: {fileID: 4528017082087823570, guid: 3a700c456282d1245951223ca926034d, type: 3}
     DownDirection: 1
+    CurrentRotation: 0
     TopSocket: Full_Top
     BottomSocket: Full_Bottom
     FrontSocket: Full_Side
@@ -25,6 +26,7 @@ MonoBehaviour:
   - Name: BlockWithDoor
     Prefab: {fileID: 6289278132728840549, guid: 512db588bced58d4cbace0c09434577f, type: 3}
     DownDirection: 1
+    CurrentRotation: 0
     TopSocket: Full_Top
     BottomSocket: Full_Bottom
     FrontSocket: Full_Side
@@ -34,6 +36,7 @@ MonoBehaviour:
   - Name: EmptyBlock
     Prefab: {fileID: 2616496724786896443, guid: a8f5a801e9cb3c148872b35aad0365d1, type: 3}
     DownDirection: 1
+    CurrentRotation: 270
     TopSocket: Full_Top
     BottomSocket: Full_Bottom
     FrontSocket: Full_Side
@@ -43,18 +46,20 @@ MonoBehaviour:
   - Name: Block_WindowLarge
     Prefab: {fileID: 4930366187878206868, guid: 8bfa0fe75d7f1784a91faed1cfa8b5ee, type: 3}
     DownDirection: 1
+    CurrentRotation: 0
     TopSocket: Full_Top
     BottomSocket: Full_Bottom
-    FrontSocket: Full_Side
+    FrontSocket: test_window
     BackSocket: Full_Side
-    LeftSocket: Full_Side
-    RightSocket: Full_Side
+    LeftSocket: Test_Left
+    RightSocket: Test_Right
   - Name: Roof_C1_A_1type
     Prefab: {fileID: 2881119585392261291, guid: ecc33320e2cf0c84b8a3ce5bc1415f88, type: 3}
     DownDirection: 5
-    TopSocket: Roof_A
-    BottomSocket: Uncompatible
-    FrontSocket: Roof_Side
-    BackSocket: Roof_Side
-    LeftSocket: Uncompatible
-    RightSocket: Full_Bottom
+    CurrentRotation: 0
+    TopSocket: Uncompatible
+    BottomSocket: Full_Bottom
+    FrontSocket: Test_Right
+    BackSocket: Test_Left
+    LeftSocket: Roof_A
+    RightSocket: Uncompatible

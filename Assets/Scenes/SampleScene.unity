@@ -150,6 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gridGenerator: {fileID: 618881658}
   buildingBlocksManager: {fileID: 11400000, guid: 8a0c0ab3ae70cb14d87cbc4b5cdc5cfb, type: 2}
+  blockOrientationManager: {fileID: 0}
   socketManager: {fileID: 11400000, guid: 7891506dfb7460c4aa40d88fa2896917, type: 2}
 --- !u!4 &76781208
 Transform:
@@ -481,6 +482,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridGenerator: {fileID: 618881658}
+  blockOrientationManager: {fileID: 11400000, guid: 24599a638cfb29d45a0a196dd5283027, type: 2}
   showUI: 1
   windowPosition: {x: 20, y: 20}
   windowSize: {x: 300, y: 400}
@@ -528,7 +530,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5094123d43343194284a91f96c25943b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridDimensions: {x: 10, y: 4, z: 10}
+  blockOrientationManager: {fileID: 0}
+  gridDimensions: {x: 3, y: 2, z: 3}
   cellSizePrefab: {fileID: 2616496724786896443, guid: a8f5a801e9cb3c148872b35aad0365d1, type: 3}
   gridOrigin: {fileID: 1050012403}
   groundSocketType: ground
@@ -537,19 +540,12 @@ MonoBehaviour:
   enableAutoRotation: 0
   buildingBlocksManager: {fileID: 11400000, guid: 8a0c0ab3ae70cb14d87cbc4b5cdc5cfb, type: 2}
   socketManager: {fileID: 11400000, guid: 7891506dfb7460c4aa40d88fa2896917, type: 2}
-  showGridGizmos: 0
-  showSocketGizmos: 0
+  showGridGizmos: 1
+  showSocketGizmos: 1
   groundCellRows:
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
-  - cells: 01010101010101010101
+  - cells: 010101
+  - cells: 010101
+  - cells: 010101
 --- !u!4 &618881659
 Transform:
   m_ObjectHideFlags: 0
@@ -704,58 +700,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1431131504
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1431131506}
-  - component: {fileID: 1431131505}
-  m_Layer: 0
-  m_Name: testRun
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1431131505
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1431131504}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e6306d0547249814dbcdc4992b231695, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  BlockSystem: {fileID: 76781207}
-  BStyle: {fileID: 11400000, guid: c7b56c91aff16c5488964947de810278, type: 2}
-  EmptyBlockName: EmptyBlock
-  StartingPosition: {x: 1, y: 0, z: 1}
-  placementDelay: 0.01
-  enableDelayedPlacement: 1
-  CenterPosition: {x: 5, y: 5}
-  MaxDistance: 10
---- !u!4 &1431131506
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1431131504}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 46.65362, y: -4.62066, z: 48.092422}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1505767326
 GameObject:
   m_ObjectHideFlags: 0
@@ -861,5 +805,4 @@ SceneRoots:
   - {fileID: 618881659}
   - {fileID: 1050012403}
   - {fileID: 76781208}
-  - {fileID: 1431131506}
   - {fileID: 505918488}

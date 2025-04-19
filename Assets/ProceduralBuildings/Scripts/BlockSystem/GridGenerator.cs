@@ -10,15 +10,12 @@ using UnityEditor;
 
 
 
-/// <summary>
-
-/// Manages a 3D grid for procedural building generation, handling placement and socket connections.
-
-/// </summary>
-
 public class GridGenerator : MonoBehaviour
 
 {
+
+    [Tooltip("Reference to the BlockOrientationManager asset")]
+    public BlockOrientationManager blockOrientationManager;
 
     [Header("Grid Settings")]
 
@@ -869,17 +866,11 @@ public class GridGenerator : MonoBehaviour
 
 
     /// <summary>
-
     /// Place a building block in a specific grid cell with a specific rotation
-
     /// </summary>
-
     /// <param name="blockData">BuildingBlock data</param>
-
     /// <param name="gridPosition">Grid position</param>
-
     /// <param name="yRotation">Y rotation in degrees (0, 90, 180, 270)</param>
-
     /// <returns>True if placement succeeded</returns>
 
     public bool PutInCell(BuildingBlock blockData, Vector3Int gridPosition, int yRotation = 0)
@@ -988,1008 +979,137 @@ public class GridGenerator : MonoBehaviour
 
 
 
-    /// <summary>
-
-    /// Align a building block with the bottom of a cell, accounting for its down direction
-
-    /// </summary>
 
     private void AlignBuildingBlock(GameObject blockObject, BuildingBlock blockData, Vector3 cellWorldPosition, float yRotationDegrees = 0f)
-
     {
+        // Get orientation data for this block
+        BlockOrientationData orientationData = null;
+        if (blockOrientationManager != null)
+        {
+            orientationData = blockOrientationManager.GetOrientationData(blockData.Name);
+        }
+        else
+        {
+            Debug.LogWarning($"BlockOrientationManager not assigned. Using default orientation for {blockData.Name}");
+            orientationData = new BlockOrientationData { blockName = blockData.Name };
+        }
 
         // Get the building block's renderer to find its bounds
-
         Renderer renderer = blockObject.GetComponent<Renderer>();
-
         if (renderer == null)
-
         {
-
             // Try to find renderer in children
-
             renderer = blockObject.GetComponentInChildren<Renderer>();
-
         }
 
+        
 
+        // First apply the grid-based Y rotation in WORLD space
+        blockObject.transform.rotation = Quaternion.identity; // Start fresh
+        blockObject.transform.Rotate(0, yRotationDegrees, 0, Space.World);
+
+        // Then apply orientation correction in LOCAL space
+        blockObject.transform.Rotate(orientationData.correctionRotation.eulerAngles, Space.Self);
+
+
+        // Force physics update to recalculate bounds after rotation
+        Physics.SyncTransforms();
 
         if (renderer != null)
-
         {
-
-            // Apply rotation based on the block's down direction
-
-            Quaternion rotation = Quaternion.identity;
-
-
-
-            switch (blockData.DownDirection)
-
-            {
-
-                case Direction.Down: // Default orientation
-
-                    rotation = Quaternion.identity;
-
-                    break;
-
-
-
-                case Direction.Up: // Upside down (180° around X)
-
-                    rotation = Quaternion.Euler(180, 0, 0);
-
-                    break;
-
-
-
-                case Direction.Front: // Front is down (90° around X)
-
-                    rotation = Quaternion.Euler(90, 0, 0);
-
-                    break;
-
-
-
-                case Direction.Back: // Back is down (-90° around X)
-
-                    rotation = Quaternion.Euler(-90, 0, 0);
-
-                    break;
-
-
-
-                case Direction.Left: // Left is down (90° around Z)
-
-                    rotation = Quaternion.Euler(0, 0, 90);
-
-                    break;
-
-
-
-                case Direction.Right: // Right is down (-90° around Z)
-
-                    rotation = Quaternion.Euler(0, 0, -90);
-
-                    break;
-
-            }
-
-
-
-            // Add Y rotation
-
-            Quaternion yRotation = Quaternion.Euler(0, yRotationDegrees, 0);
-
-
-
-            // Apply the combined rotation
-
-            blockObject.transform.rotation = yRotation * rotation;
-
-
-
-            // Force physics update to recalculate bounds after rotation
-
-            Physics.SyncTransforms();
-
-
-
             // Get the new bounds after rotation
-
             Bounds bounds = renderer.bounds;
 
-
-
             // Calculate the lowest point of the model
-
             float bottomOffset = bounds.min.y - blockObject.transform.position.y;
 
-
-
             // Position the building block so its bottom aligns with the bottom of the cell
-
             blockObject.transform.position = new Vector3(
-
                 cellWorldPosition.x + (cellSize.x / 2f), // Center X
-
                 cellWorldPosition.y - bottomOffset,      // Align bottom
-
                 cellWorldPosition.z + (cellSize.z / 2f)  // Center Z
-
             );
 
+            // Apply the additional position offset
+            blockObject.transform.position += orientationData.correctionOffset;
         }
-
         else
-
         {
-
-            // If no renderer found, just place at cell center with a warning
-
+            // If no renderer found, just place at cell center
             blockObject.transform.position = new Vector3(
-
                 cellWorldPosition.x + (cellSize.x / 2f),
-
                 cellWorldPosition.y + (cellSize.y / 2f),
-
                 cellWorldPosition.z + (cellSize.z / 2f)
-
             );
 
-
-
-            // Apply rotation
-
-            Quaternion rotation = Quaternion.identity;
-
-
-
-            switch (blockData.DownDirection)
-
-            {
-
-                case Direction.Down: // Default orientation
-
-                    rotation = Quaternion.identity;
-
-                    break;
-
-
-
-                case Direction.Up: // Upside down (180° around X)
-
-                    rotation = Quaternion.Euler(180, 0, 0);
-
-                    break;
-
-
-
-                case Direction.Front: // Front is down (90° around X)
-
-                    rotation = Quaternion.Euler(90, 0, 0);
-
-                    break;
-
-
-
-                case Direction.Back: // Back is down (-90° around X)
-
-                    rotation = Quaternion.Euler(-90, 0, 0);
-
-                    break;
-
-
-
-                case Direction.Left: // Left is down (90° around Z)
-
-                    rotation = Quaternion.Euler(0, 0, 90);
-
-                    break;
-
-
-
-                case Direction.Right: // Right is down (-90° around Z)
-
-                    rotation = Quaternion.Euler(0, 0, -90);
-
-                    break;
-
-            }
-
-
-
-            // Add Y rotation
-
-            Quaternion yRotation = Quaternion.Euler(0, yRotationDegrees, 0);
-
-
-
-            // Apply the combined rotation
-
-            blockObject.transform.rotation = yRotation * rotation;
-
-
+            // Apply position offset
+            blockObject.transform.position += orientationData.correctionOffset;
 
             Debug.LogWarning($"No renderer found on building block '{blockData.Name}' for alignment");
-
         }
-
     }
 
 
 
     /// <summary>
-
-    /// Apply the appropriate rotation based on the down direction
-
-    /// This approach uses direct transform rotation rather than quaternion multiplication
-
-    /// </summary>
-
-    private void ApplyDownDirectionRotation(GameObject obj, Direction downDirection)
-
-    {
-
-        switch (downDirection)
-
-        {
-
-            case Direction.Up:
-
-                // For "Up" down direction, rotate 180 degrees around X axis
-
-                obj.transform.Rotate(Vector3.right, 180f);
-
-                break;
-
-
-
-            case Direction.Down:
-
-                // Default orientation, no additional rotation needed
-
-                break;
-
-
-
-            case Direction.Front:
-
-                // For "Front" down direction, rotate 90 degrees around X axis
-
-                obj.transform.Rotate(Vector3.right, 90f);
-
-                // Apply 180 degree Z rotation to match socket orientation
-
-                //obj.transform.Rotate(Vector3.forward, 180f);
-
-                break;
-
-
-
-            case Direction.Back:
-
-                // For "Back" down direction, rotate -90 degrees around X axis
-
-                obj.transform.Rotate(Vector3.right, -90f);
-
-                // Apply 180 degree Z rotation to match socket orientation
-
-                //obj.transform.Rotate(Vector3.forward, 180f);
-
-                break;
-
-
-
-            case Direction.Left:
-
-                // For "Left" down direction, rotate -90 degrees around Z axis
-
-                obj.transform.Rotate(Vector3.forward, -90f);
-
-                // Apply 180 degree X rotation to match socket orientation
-
-                //obj.transform.Rotate(Vector3.right, 180f);
-
-                break;
-
-
-
-            case Direction.Right:
-
-                // For "Right" down direction, rotate 90 degrees around Z axis
-
-                obj.transform.Rotate(Vector3.forward, 90f);
-
-                // Apply 180 degree X rotation to match socket orientation
-
-                //obj.transform.Rotate(Vector3.right, 180f);
-
-                break;
-
-        }
-
-    }
-
-
-
-    /// <summary>
-
     /// Apply a specific horizontal rotation (around Y axis) to a building block's socket data
-
     /// </summary>
-
+    /// <param name="blockData"></param>
+    /// <param name="yRotationDegrees"></param>
     private void ApplyHorizontalYRotation(BuildingBlock blockData, int yRotationDegrees)
-
     {
-
         // Normalize the rotation to 0, 90, 180, or 270 degrees
-
         yRotationDegrees = ((yRotationDegrees % 360) + 360) % 360;
 
-
-
         // Skip if rotation is 0 degrees
-
         if (yRotationDegrees == 0)
-
             return;
 
-
-
         // Store original socket values
-
         string originalTop = blockData.TopSocket;
-
         string originalBottom = blockData.BottomSocket;
-
         string originalFront = blockData.FrontSocket;
-
         string originalBack = blockData.BackSocket;
-
         string originalLeft = blockData.LeftSocket;
-
         string originalRight = blockData.RightSocket;
 
-
-
-        // Socket rotation logic depends on the down direction
-
-        // For all down directions, we need to rotate the horizontal sockets correctly
-
-
-
-        // For standard down direction (Down/Up), horizontal rotation is straightforward
-
-        if (blockData.DownDirection == Direction.Down || blockData.DownDirection == Direction.Up)
-
-        {
-
-            switch (yRotationDegrees)
-
-            {
-
-                case 90: // 90 degrees clockwise around Y axis
-
-                    blockData.FrontSocket = originalRight;
-
-                    blockData.RightSocket = originalBack;
-
-                    blockData.BackSocket = originalLeft;
-
-                    blockData.LeftSocket = originalFront;
-
-                    break;
-
-
-
-                case 180: // 180 degrees around Y axis
-
-                    blockData.FrontSocket = originalBack;
-
-                    blockData.BackSocket = originalFront;
-
-                    blockData.LeftSocket = originalRight;
-
-                    blockData.RightSocket = originalLeft;
-
-                    break;
-
-
-
-                case 270: // 270 degrees clockwise (or 90 counterclockwise) around Y axis
-
-                    blockData.FrontSocket = originalLeft;
-
-                    blockData.LeftSocket = originalBack;
-
-                    blockData.BackSocket = originalRight;
-
-                    blockData.RightSocket = originalFront;
-
-                    break;
-
-            }
-
-        }
-
-        else if (blockData.DownDirection == Direction.Front || blockData.DownDirection == Direction.Back)
-
-        {
-
-            // For Front/Back down direction, Y rotation affects Top/Bottom/Left/Right
-
-            // The top/bottom become the new sides when the building block is oriented this way
-
-            switch (yRotationDegrees)
-
-            {
-
-                case 90:
-
-                    if (blockData.DownDirection == Direction.Front)
-
-                    {
-
-                        blockData.TopSocket = originalRight;
-
-                        blockData.RightSocket = originalBottom;
-
-                        blockData.BottomSocket = originalLeft;
-
-                        blockData.LeftSocket = originalTop;
-
-                    }
-
-                    else // Back
-
-                    {
-
-                        blockData.TopSocket = originalLeft;
-
-                        blockData.LeftSocket = originalBottom;
-
-                        blockData.BottomSocket = originalRight;
-
-                        blockData.RightSocket = originalTop;
-
-                    }
-
-                    break;
-
-
-
-                case 180:
-
-                    blockData.TopSocket = originalBottom;
-
-                    blockData.BottomSocket = originalTop;
-
-                    blockData.LeftSocket = originalRight;
-
-                    blockData.RightSocket = originalLeft;
-
-                    break;
-
-
-
-                case 270:
-
-                    if (blockData.DownDirection == Direction.Front)
-
-                    {
-
-                        blockData.TopSocket = originalLeft;
-
-                        blockData.LeftSocket = originalBottom;
-
-                        blockData.BottomSocket = originalRight;
-
-                        blockData.RightSocket = originalTop;
-
-                    }
-
-                    else // Back
-
-                    {
-
-                        blockData.TopSocket = originalRight;
-
-                        blockData.RightSocket = originalBottom;
-
-                        blockData.BottomSocket = originalLeft;
-
-                        blockData.LeftSocket = originalTop;
-
-                    }
-
-                    break;
-
-            }
-
-        }
-
-        else if (blockData.DownDirection == Direction.Left || blockData.DownDirection == Direction.Right)
-
-        {
-
-            // For Left/Right down direction, Y rotation affects Top/Bottom/Front/Back
-
-            switch (yRotationDegrees)
-
-            {
-
-                case 90:
-
-                    if (blockData.DownDirection == Direction.Left)
-
-                    {
-
-                        blockData.TopSocket = originalFront;
-
-                        blockData.FrontSocket = originalBottom;
-
-                        blockData.BottomSocket = originalBack;
-
-                        blockData.BackSocket = originalTop;
-
-                    }
-
-                    else // Right
-
-                    {
-
-                        blockData.TopSocket = originalBack;
-
-                        blockData.BackSocket = originalBottom;
-
-                        blockData.BottomSocket = originalFront;
-
-                        blockData.FrontSocket = originalTop;
-
-                    }
-
-                    break;
-
-
-
-                case 180:
-
-                    blockData.TopSocket = originalBottom;
-
-                    blockData.BottomSocket = originalTop;
-
-                    blockData.FrontSocket = originalBack;
-
-                    blockData.BackSocket = originalFront;
-
-                    break;
-
-
-
-                case 270:
-
-                    if (blockData.DownDirection == Direction.Left)
-
-                    {
-
-                        blockData.TopSocket = originalBack;
-
-                        blockData.BackSocket = originalBottom;
-
-                        blockData.BottomSocket = originalFront;
-
-                        blockData.FrontSocket = originalTop;
-
-                    }
-
-                    else // Right
-
-                    {
-
-                        blockData.TopSocket = originalFront;
-
-                        blockData.FrontSocket = originalBottom;
-
-                        blockData.BottomSocket = originalBack;
-
-                        blockData.BackSocket = originalTop;
-
-                    }
-
-                    break;
-
-            }
-
-        }
-
-
-
-        //Debug.Log($"Applied horizontal Y rotation: {yRotationDegrees}° for block with down direction: {blockData.DownDirection}");
-
-    }
-
-
-
-    /// <summary>
-
-    /// Apply standard Y rotation for blocks with Down or Up as DownDirection
-
-    /// </summary>
-
-    private void ApplyStandardYRotation(BuildingBlock blockData, int yRotationDegrees)
-
-    {
-
-        // Store original socket values
-
-        string originalTop = blockData.TopSocket;
-
-        string originalBottom = blockData.BottomSocket;
-
-        string originalFront = blockData.FrontSocket;
-
-        string originalBack = blockData.BackSocket;
-
-        string originalLeft = blockData.LeftSocket;
-
-        string originalRight = blockData.RightSocket;
-
-
-
-        // Apply rotation based on angle
-
+        // Apply rotation based on angle (corrected direction)
         switch (yRotationDegrees)
-
         {
-
             case 90: // 90 degrees clockwise around Y axis
-
-                blockData.FrontSocket = originalRight;
-
-                blockData.RightSocket = originalBack;
-
-                blockData.BackSocket = originalLeft;
-
-                blockData.LeftSocket = originalFront;
-
+                     // CORRECTED: Match the actual visual rotation direction
+                blockData.RightSocket = originalFront;
+                blockData.BackSocket = originalRight;
+                blockData.LeftSocket = originalBack;
+                blockData.FrontSocket = originalLeft;
                 break;
-
-
 
             case 180: // 180 degrees around Y axis
-
+                      // This remains the same (rotation by 180° is symmetric)
                 blockData.FrontSocket = originalBack;
-
                 blockData.BackSocket = originalFront;
-
                 blockData.LeftSocket = originalRight;
-
                 blockData.RightSocket = originalLeft;
-
                 break;
 
-
-
-            case 270: // 270 degrees clockwise (or 90 counterclockwise) around Y axis
-
-                blockData.FrontSocket = originalLeft;
-
-                blockData.LeftSocket = originalBack;
-
-                blockData.BackSocket = originalRight;
-
-                blockData.RightSocket = originalFront;
-
+            case 270: // 270 degrees clockwise around Y axis
+                      // CORRECTED: Match the actual visual rotation direction
+                blockData.LeftSocket = originalFront;
+                blockData.FrontSocket = originalRight;
+                blockData.RightSocket = originalBack;
+                blockData.BackSocket = originalLeft;
                 break;
-
         }
-
-    }
-
-
-
-    /// <summary>
-
-    /// Apply adapted Y rotation for blocks with alternative Down directions
-
-    /// This method handles the special cases where the block is oriented differently
-
-    /// </summary>
-
-    private void ApplyAdaptedYRotation(BuildingBlock blockData, int yRotationDegrees)
-
-    {
-
-        // Store original socket values
-
-        string originalTop = blockData.TopSocket;
-
-        string originalBottom = blockData.BottomSocket;
-
-        string originalFront = blockData.FrontSocket;
-
-        string originalBack = blockData.BackSocket;
-
-        string originalLeft = blockData.LeftSocket;
-
-        string originalRight = blockData.RightSocket;
-
-
-
-        // The rotation needs to be adapted based on the down direction
-
-        switch (blockData.DownDirection)
-
-        {
-
-            case Direction.Front:
-
-                // Front is down, so Y rotation affects different axes
-
-                switch (yRotationDegrees)
-
-                {
-
-                    case 90:
-
-                        blockData.TopSocket = originalLeft;
-
-                        blockData.RightSocket = originalTop;
-
-                        blockData.BottomSocket = originalRight;
-
-                        blockData.LeftSocket = originalBottom;
-
-                        break;
-
-                    case 180:
-
-                        blockData.TopSocket = originalBottom;
-
-                        blockData.RightSocket = originalLeft;
-
-                        blockData.BottomSocket = originalTop;
-
-                        blockData.LeftSocket = originalRight;
-
-                        break;
-
-                    case 270:
-
-                        blockData.TopSocket = originalRight;
-
-                        blockData.RightSocket = originalBottom;
-
-                        blockData.BottomSocket = originalLeft;
-
-                        blockData.LeftSocket = originalTop;
-
-                        break;
-
-                }
-
-                break;
-
-
-
-            case Direction.Back:
-
-                // Back is down, so Y rotation affects different axes
-
-                switch (yRotationDegrees)
-
-                {
-
-                    case 90:
-
-                        blockData.TopSocket = originalRight;
-
-                        blockData.RightSocket = originalBottom;
-
-                        blockData.BottomSocket = originalLeft;
-
-                        blockData.LeftSocket = originalTop;
-
-                        break;
-
-                    case 180:
-
-                        blockData.TopSocket = originalBottom;
-
-                        blockData.RightSocket = originalLeft;
-
-                        blockData.BottomSocket = originalTop;
-
-                        blockData.LeftSocket = originalRight;
-
-                        break;
-
-                    case 270:
-
-                        blockData.TopSocket = originalLeft;
-
-                        blockData.RightSocket = originalTop;
-
-                        blockData.BottomSocket = originalRight;
-
-                        blockData.LeftSocket = originalBottom;
-
-                        break;
-
-                }
-
-                break;
-
-
-
-            case Direction.Left:
-
-                // Left is down, so Y rotation affects different axes
-
-                switch (yRotationDegrees)
-
-                {
-
-                    case 90:
-
-                        blockData.TopSocket = originalBack;
-
-                        blockData.FrontSocket = originalTop;
-
-                        blockData.BottomSocket = originalFront;
-
-                        blockData.BackSocket = originalBottom;
-
-                        break;
-
-                    case 180:
-
-                        blockData.TopSocket = originalBottom;
-
-                        blockData.FrontSocket = originalBack;
-
-                        blockData.BottomSocket = originalTop;
-
-                        blockData.BackSocket = originalFront;
-
-                        break;
-
-                    case 270:
-
-                        blockData.TopSocket = originalFront;
-
-                        blockData.FrontSocket = originalBottom;
-
-                        blockData.BottomSocket = originalBack;
-
-                        blockData.BackSocket = originalTop;
-
-                        break;
-
-                }
-
-                break;
-
-
-
-            case Direction.Right:
-
-                // Right is down, so Y rotation affects different axes
-
-                switch (yRotationDegrees)
-
-                {
-
-                    case 90:
-
-                        blockData.TopSocket = originalFront;
-
-                        blockData.FrontSocket = originalBottom;
-
-                        blockData.BottomSocket = originalBack;
-
-                        blockData.BackSocket = originalTop;
-
-                        break;
-
-                    case 180:
-
-                        blockData.TopSocket = originalBottom;
-
-                        blockData.FrontSocket = originalBack;
-
-                        blockData.BottomSocket = originalTop;
-
-                        blockData.BackSocket = originalFront;
-
-                        break;
-
-                    case 270:
-
-                        blockData.TopSocket = originalBack;
-
-                        blockData.FrontSocket = originalTop;
-
-                        blockData.BottomSocket = originalFront;
-
-                        blockData.BackSocket = originalBottom;
-
-                        break;
-
-                }
-
-                break;
-
-        }
-
-
-
-        Debug.Log($"Applied adapted Y rotation: {yRotationDegrees}° for block with down direction: {blockData.DownDirection}");
-
-    }
-
-
-
-    /// <summary>
-
-    /// Get the rotation quaternion for a specific direction
-
-    /// </summary>
-
-    private Quaternion GetRotationFromDirection(Direction direction)
-
-    {
-
-        switch (direction)
-
-        {
-
-            case Direction.Up:
-
-                return Quaternion.Euler(180, 0, 0); // Upside down
-
-            case Direction.Down:
-
-                return Quaternion.identity; // Default orientation
-
-            case Direction.Front:
-
-                return Quaternion.Euler(-90, 0, 0);
-
-            case Direction.Back:
-
-                return Quaternion.Euler(90, 0, 0);
-
-            case Direction.Left:
-
-                return Quaternion.Euler(0, 0, 90);
-
-            case Direction.Right:
-
-                return Quaternion.Euler(0, 0, -90);
-
-            default:
-
-                return Quaternion.identity;
-
-        }
-
     }
 
 
 
 
-
-
-
     /// <summary>
-
     /// Clone a BuildingBlock to prevent modifying the original
-
     /// </summary>
-
+    /// <param name="original"></param>
+    /// <returns></returns>
     private BuildingBlock CloneBuildingBlock(BuildingBlock original)
 
     {
@@ -2676,18 +1796,6 @@ public class GridGenerator : MonoBehaviour
 
             }
 
-            // Keep socket if neighbor exists and is occupied
-
-            else if (IsValidPosition(neighborPos) && grid[neighborPos.x, neighborPos.y, neighborPos.z].isOccupied)
-
-            {
-
-                resetSocket = false;
-
-                // Socket value stays the same to maintain connection with the neighboring block
-
-            }
-
 
 
             // Reset the socket if needed
@@ -2735,7 +1843,7 @@ public class GridGenerator : MonoBehaviour
             // Only reset the neighbor's socket if it's not occupied
 
             GridCell neighbor = grid[neighborPos.x, neighborPos.y, neighborPos.z];
-
+            
             if (!neighbor.isOccupied)
 
             {

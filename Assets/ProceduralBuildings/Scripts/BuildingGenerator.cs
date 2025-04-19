@@ -378,7 +378,7 @@ public class BuildingGenerator : MonoBehaviour
 
             {
 
-                Debug.Log("CurrentCells count is 0, terminating generation");
+                //Debug.Log("CurrentCells count is 0, terminating generation");
 
                 break;
 
@@ -476,7 +476,7 @@ public class BuildingGenerator : MonoBehaviour
 
                     BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
 
-                    Debug.Log($"Placed block: {newBlock.Name} at {cell}");
+                    //Debug.Log($"Placed block: {newBlock.Name} at {cell}");
 
                     yield return new WaitForSeconds(placementDelay);
 
@@ -584,7 +584,7 @@ public class BuildingGenerator : MonoBehaviour
 
         {
 
-            Debug.Log($"Couldn't find a valid block for the cell {position}");
+            //Debug.Log($"Couldn't find a valid block for the cell {position}");
 
             return null;
 

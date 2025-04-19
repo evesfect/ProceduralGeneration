@@ -9,7 +9,10 @@ public class BuildingBlock
 {
     public string Name;
     public GameObject Prefab;
-    public Direction DownDirection = Direction.Down; // The actual down direction of the prefab
+
+    [System.Obsolete("DownDirection is being phased out in favor of BlockOrientationData")]
+    public Direction DownDirection = Direction.Down;
+
     public int CurrentRotation = 0;
 
     // Socket assignments for each direction
@@ -20,14 +23,10 @@ public class BuildingBlock
     public string LeftSocket;
     public string RightSocket;
 
-    // Get socket for a specific direction accounting for rotation
     public string GetSocketForDirection(Direction direction)
     {
-        // Convert direction based on the model's actual orientation
-        Direction adjustedDirection = AdjustDirectionForRotation(direction);
-
-        // Return the appropriate socket
-        switch (adjustedDirection)
+        // Return the appropriate socket directly
+        switch (direction)
         {
             case Direction.Up: return TopSocket;
             case Direction.Down: return BottomSocket;
@@ -39,14 +38,10 @@ public class BuildingBlock
         }
     }
 
-    // Set socket for a specific direction accounting for rotation
     public void SetSocketForDirection(Direction direction, string socketType)
     {
-        // Convert direction based on the model's actual orientation
-        Direction adjustedDirection = AdjustDirectionForRotation(direction);
-
-        // Set the appropriate socket
-        switch (adjustedDirection)
+        // Set the appropriate socket directly
+        switch (direction)
         {
             case Direction.Up: TopSocket = socketType; break;
             case Direction.Down: BottomSocket = socketType; break;
@@ -55,67 +50,6 @@ public class BuildingBlock
             case Direction.Left: LeftSocket = socketType; break;
             case Direction.Right: RightSocket = socketType; break;
         }
-    }
-
-    // Adjust direction based on the model's rotation
-    private Direction AdjustDirectionForRotation(Direction inputDirection)
-    {
-        // Create a rotation mapping based on the down direction
-        Dictionary<Direction, Direction> rotationMap = new Dictionary<Direction, Direction>();
-
-        // Define how directions are altered based on the down direction
-        switch (DownDirection)
-        {
-            case Direction.Down: // Default orientation
-                return inputDirection; // No adjustment needed
-
-            case Direction.Up: // Upside down
-                rotationMap[Direction.Up] = Direction.Down;
-                rotationMap[Direction.Down] = Direction.Up;
-                rotationMap[Direction.Front] = Direction.Back;
-                rotationMap[Direction.Back] = Direction.Front;
-                rotationMap[Direction.Left] = Direction.Left;
-                rotationMap[Direction.Right] = Direction.Right;
-                break;
-
-            case Direction.Front: // Front is down
-                rotationMap[Direction.Up] = Direction.Back;
-                rotationMap[Direction.Down] = Direction.Front;
-                rotationMap[Direction.Front] = Direction.Down;
-                rotationMap[Direction.Back] = Direction.Up;
-                rotationMap[Direction.Left] = Direction.Left;
-                rotationMap[Direction.Right] = Direction.Right;
-                break;
-
-            case Direction.Back: // Back is down
-                rotationMap[Direction.Up] = Direction.Front;
-                rotationMap[Direction.Down] = Direction.Back;
-                rotationMap[Direction.Front] = Direction.Up;
-                rotationMap[Direction.Back] = Direction.Down;
-                rotationMap[Direction.Left] = Direction.Left;
-                rotationMap[Direction.Right] = Direction.Right;
-                break;
-
-            case Direction.Left: // Left is down
-                rotationMap[Direction.Up] = Direction.Right;
-                rotationMap[Direction.Down] = Direction.Left;
-                rotationMap[Direction.Front] = Direction.Front;
-                rotationMap[Direction.Back] = Direction.Back;
-                rotationMap[Direction.Left] = Direction.Down;
-                rotationMap[Direction.Right] = Direction.Up;
-                break;
-
-            case Direction.Right: // Right is down
-                rotationMap[Direction.Up] = Direction.Left;
-                rotationMap[Direction.Down] = Direction.Right;
-                rotationMap[Direction.Front] = Direction.Front;
-                rotationMap[Direction.Back] = Direction.Back;
-                rotationMap[Direction.Left] = Direction.Up;
-                rotationMap[Direction.Right] = Direction.Down;
-                break;
-        }
-
-        return rotationMap.ContainsKey(inputDirection) ? rotationMap[inputDirection] : inputDirection;
     }
 }
 
@@ -137,7 +71,7 @@ public class BuildingBlocksManager : ScriptableObject
     public List<BuildingBlock> BuildingBlocks = new List<BuildingBlock>();
 
     // Add a new building block
-    public void AddBuildingBlock(GameObject prefab, Direction downDirection)
+    public void AddBuildingBlock(GameObject prefab)
     {
         if (prefab == null)
             return;
@@ -151,7 +85,8 @@ public class BuildingBlocksManager : ScriptableObject
         {
             Name = prefab.name,
             Prefab = prefab,
-            DownDirection = downDirection
+            // Default to standard orientation
+            DownDirection = Direction.Down
         };
 
         BuildingBlocks.Add(newBlock);
@@ -320,7 +255,7 @@ public class BuildingBlocksManagerWindow : EditorWindow
             {
                 if (prefab != null)
                 {
-                    buildingBlocksManager.AddBuildingBlock(prefab, downDirection);
+                    buildingBlocksManager.AddBuildingBlock(prefab);
                 }
             }
 

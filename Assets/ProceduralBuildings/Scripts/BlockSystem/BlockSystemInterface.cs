@@ -15,8 +15,13 @@ public class BlockSystemInterface : MonoBehaviour
     [Tooltip("Reference to the BuildingBlocksManager asset")]
     public BuildingBlocksManager buildingBlocksManager;
 
+    [Tooltip("Reference to the BlockOrientationManager asset")]
+    public BlockOrientationManager blockOrientationManager;
+
     [Tooltip("Reference to the SocketManager asset")]
     public SocketManager socketManager;
+
+
 
     /// <summary>
     /// Initialize the system. Call this before using any other methods.
@@ -41,6 +46,12 @@ public class BlockSystemInterface : MonoBehaviour
         {
             Debug.LogError("BlockSystemInterface: SocketManager reference not assigned!");
             return false;
+        }
+
+        // Make sure the gridGenerator has access to the orientation manager
+        if (blockOrientationManager != null && gridGenerator.blockOrientationManager == null)
+        {
+            gridGenerator.blockOrientationManager = blockOrientationManager;
         }
 
         return true;
@@ -173,7 +184,7 @@ public class BlockSystemInterface : MonoBehaviour
         if (block.CurrentRotation != 0)
         {
             // Place with the specific rotation
-            Debug.Log($"Using pre-determined rotation: {block.CurrentRotation}°");
+            //Debug.Log($"Using pre-determined rotation: {block.CurrentRotation}°");
             return gridGenerator.PutInCell(block, position, block.CurrentRotation);
         }
 
