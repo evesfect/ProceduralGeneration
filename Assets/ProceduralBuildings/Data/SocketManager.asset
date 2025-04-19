@@ -21,9 +21,6 @@ MonoBehaviour:
   - Uncompatible
   - Roof_Side
   - ground
-  - Test_Right
-  - Test_Left
-  - test_window
   SocketCompatibilities:
   - SocketType: Full_Top
     CompatibleSockets:
@@ -57,12 +54,3 @@ MonoBehaviour:
     CompatibleSockets:
     - ground
     - Full_Bottom
-  - SocketType: Test_Right
-    CompatibleSockets:
-    - Test_Right
-  - SocketType: Test_Left
-    CompatibleSockets:
-    - Test_Left
-  - SocketType: test_window
-    CompatibleSockets:
-    - test_window

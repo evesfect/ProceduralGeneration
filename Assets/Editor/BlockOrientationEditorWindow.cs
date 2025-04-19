@@ -20,7 +20,7 @@ public class BlockOrientationEditorWindow : EditorWindow
     private Vector3 positionOffset = Vector3.zero;
 
     // Reference frame size
-    private float axisLength = 2.5f;
+    private float axisLength = 4f;
     private float socketRadius = 0.1f;
 
     // Colors for directions

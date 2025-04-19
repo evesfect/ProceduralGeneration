@@ -957,7 +957,7 @@ public class GridGenerator : MonoBehaviour
 
         // Update neighboring cells' sockets
 
-        UpdateNeighborSockets(gridPosition);
+        //UpdateNeighborSockets(gridPosition);
 
 
 
@@ -1339,9 +1339,11 @@ public class GridGenerator : MonoBehaviour
             // Skip if neighbor is out of bounds
 
             if (!IsValidPosition(neighborPos))
-
                 continue;
 
+            // Don't update neighbor's socket if already occupied
+            if (grid[neighborPos.x, neighborPos.y, neighborPos.z].isOccupied)
+                continue;
 
 
             // Get the opposite direction's index

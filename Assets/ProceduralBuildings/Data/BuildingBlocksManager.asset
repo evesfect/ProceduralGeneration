@@ -49,17 +49,17 @@ MonoBehaviour:
     CurrentRotation: 0
     TopSocket: Full_Top
     BottomSocket: Full_Bottom
-    FrontSocket: test_window
+    FrontSocket: Full_Side
     BackSocket: Full_Side
-    LeftSocket: Test_Left
-    RightSocket: Test_Right
+    LeftSocket: Full_Side
+    RightSocket: Full_Side
   - Name: Roof_C1_A_1type
     Prefab: {fileID: 2881119585392261291, guid: ecc33320e2cf0c84b8a3ce5bc1415f88, type: 3}
     DownDirection: 5
     CurrentRotation: 0
     TopSocket: Uncompatible
     BottomSocket: Full_Bottom
-    FrontSocket: Test_Right
-    BackSocket: Test_Left
+    FrontSocket: Roof_Side
+    BackSocket: Roof_Side
     LeftSocket: Roof_A
     RightSocket: Uncompatible
