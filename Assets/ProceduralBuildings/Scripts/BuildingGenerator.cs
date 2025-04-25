@@ -7,6 +7,7 @@ public class BuildingGenerator : MonoBehaviour
     [SerializeField] private BlockSystemInterface BlockSystem;
     [SerializeField] private BuildingStyle BStyle;
     [SerializeField] private BlockOrientationManager OrientationManager;
+    [SerializeField] private BlockRulesManager rulesManager;
 
     private bool isBlockSystemInitialized = false;
     [SerializeField] private string EmptyBlockName = "EmptyBlock";
@@ -35,7 +36,7 @@ public class BuildingGenerator : MonoBehaviour
     {
         if (BlockSystem == null)
         {
-            BlockSystem = FindObjectOfType<BlockSystemInterface>();
+            BlockSystem = FindFirstObjectByType<BlockSystemInterface>();
             if (BlockSystem == null)
             {
                 Debug.LogError("Block System Interface could not be found.");
@@ -45,7 +46,7 @@ public class BuildingGenerator : MonoBehaviour
 
         if (OrientationManager == null)
         {
-            OrientationManager = FindObjectOfType<BlockOrientationManager>();
+            OrientationManager = FindFirstObjectByType<BlockOrientationManager>();
             if (OrientationManager == null)
             {
                 Debug.LogWarning("BlockOrientationManager not found. Blocks may not be correctly oriented.");
@@ -168,6 +169,10 @@ public class BuildingGenerator : MonoBehaviour
                         System.Threading.Thread.Sleep((int)(placementDelay * 1000));
                     }
                     BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
+                    if (rulesManager != null)
+                    {
+                        rulesManager.NotifyBlockPlaced(newBlock, newBlock.CurrentRotation, cell, this);
+                    }
                 }
             }
 
@@ -252,6 +257,10 @@ public class BuildingGenerator : MonoBehaviour
                 {
                     BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
                     //Debug.Log($"Placed block: {newBlock.Name} at {cell} with rotation {newBlock.CurrentRotation}°");
+                    if (rulesManager != null)
+                    {
+                        rulesManager.NotifyBlockPlaced(newBlock, newBlock.CurrentRotation, cell, this);
+                    }
                     yield return new WaitForSeconds(placementDelay);
                 }
             }
@@ -292,31 +301,26 @@ public class BuildingGenerator : MonoBehaviour
             var (isValid, rotation) = BlockSystem.CheckBlockValidForPosition(
                 block, position, tryAllRotations, useRandomRotation);
 
+            if (isValid && rulesManager != null)
+            {
+                isValid = rulesManager.IsPlacementLegal(block, rotation, position, this);
+            }
+
             if (isValid)
             {
                 float weight = BStyle.GetWeight(block.Name, normalizedHeight, normalizedDistance);
                 validBlocks.Add((block, rotation, weight));
                 totalWeightSum += weight;
 
-                if (OrientationManager != null)
-                {
-                    BlockOrientationData orientationData = OrientationManager.GetOrientationData(block.Name);
-                    bool hasOrientation = (orientationData.correctionRotation != Quaternion.identity ||
-                                           orientationData.correctionOffset != Vector3.zero);
+                string ruleInfo = rulesManager != null ? " (passes rules)" : "";
+                Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight}{ruleInfo}");
 
-                    string orientationInfo = hasOrientation ? " (has orientation correction)" : "";
-                    Debug.Log($"Found valid block {block.Name}{orientationInfo} with rotation {rotation}° and weight {weight} at height {normalizedHeight:F2}, distance {normalizedDistance:F2}");
-                }
-                else
-                {
-                    Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight} at height {normalizedHeight:F2}, distance {normalizedDistance:F2}");
-                }
             }
         }
 
         if (validBlocks.Count <= 0)
         {
-            Debug.Log($"Couldn't find a valid block for the cell {position}");
+            //Debug.Log($"Couldn't find a valid block for the cell {position}");
             return null;
         }
 

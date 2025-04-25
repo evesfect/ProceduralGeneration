@@ -1122,8 +1122,6 @@ public class GridGenerator : MonoBehaviour
 
             Prefab = original.Prefab,
 
-            DownDirection = original.DownDirection,
-
             TopSocket = original.TopSocket,
 
             BottomSocket = original.BottomSocket,

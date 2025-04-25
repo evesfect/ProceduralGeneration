@@ -85,8 +85,6 @@ public class BuildingBlocksManager : ScriptableObject
         {
             Name = prefab.name,
             Prefab = prefab,
-            // Default to standard orientation
-            DownDirection = Direction.Down
         };
 
         BuildingBlocks.Add(newBlock);
@@ -335,7 +333,7 @@ public class BuildingBlocksManagerWindow : EditorWindow
                 EditorGUILayout.BeginHorizontal();
 
                 selectedBuildingBlocks[i] = EditorGUILayout.ToggleLeft(
-                    block.Name + " (Down: " + block.DownDirection.ToString() + ")",
+                    block.Name,
                     selectedBuildingBlocks[i]
                 );
 
@@ -418,7 +416,6 @@ public class BuildingBlocksManagerWindow : EditorWindow
                 EditorGUILayout.BeginVertical("box");
                 EditorGUILayout.LabelField("Name: " + block.Name, EditorStyles.boldLabel);
                 EditorGUILayout.LabelField("Prefab: " + (block.Prefab != null ? block.Prefab.name : "None"));
-                EditorGUILayout.LabelField("Down Direction: " + block.DownDirection.ToString());
 
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Sockets (in world space):");

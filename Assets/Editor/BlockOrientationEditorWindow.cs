@@ -153,7 +153,6 @@ public class BlockOrientationEditorWindow : EditorWindow
 
                 EditorGUILayout.LabelField("Selected Block Info:", EditorStyles.boldLabel);
                 EditorGUILayout.LabelField($"Name: {selectedBlock.Name}");
-                EditorGUILayout.LabelField($"Current Down Direction: {selectedBlock.DownDirection}");
 
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("Socket Types:", EditorStyles.boldLabel);
