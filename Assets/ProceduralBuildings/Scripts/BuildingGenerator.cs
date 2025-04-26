@@ -1,4 +1,3 @@
-// Step 3: Update BuildingGenerator.cs to use the enhanced weight system
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +6,8 @@ public class BuildingGenerator : MonoBehaviour
 {
     [SerializeField] private BlockSystemInterface BlockSystem;
     [SerializeField] private BuildingStyle BStyle;
+    [SerializeField] private BlockOrientationManager OrientationManager;
+    [SerializeField] private BlockRulesManager rulesManager;
 
     private bool isBlockSystemInitialized = false;
     [SerializeField] private string EmptyBlockName = "EmptyBlock";
@@ -28,10 +29,6 @@ public class BuildingGenerator : MonoBehaviour
     [Tooltip("Maximum distance from center used to normalize distance values")]
     [SerializeField] private float MaxDistance = 10f;
 
-    [Header("Rule System")]
-    [Tooltip("Reference to the Rule Manager")]
-    [SerializeField] private RuleManager ruleManager;
-
     private HashSet<Vector3Int> invalidCells = new HashSet<Vector3Int>();
     private Dictionary<BuildingBlock, int> blockRotations = new Dictionary<BuildingBlock, int>();
 
@@ -39,12 +36,27 @@ public class BuildingGenerator : MonoBehaviour
     {
         if (BlockSystem == null)
         {
-            BlockSystem = FindAnyObjectByType<BlockSystemInterface>();
+            BlockSystem = FindFirstObjectByType<BlockSystemInterface>();
             if (BlockSystem == null)
             {
                 Debug.LogError("Block System Interface could not be found.");
                 return;
             }
+        }
+
+        if (OrientationManager == null)
+        {
+            OrientationManager = FindFirstObjectByType<BlockOrientationManager>();
+            if (OrientationManager == null)
+            {
+                Debug.LogWarning("BlockOrientationManager not found. Blocks may not be correctly oriented.");
+            }
+        }
+
+        // Ensure GridGenerator has access to the orientation manager
+        if (OrientationManager != null && BlockSystem.gridGenerator != null)
+        {
+            BlockSystem.gridGenerator.blockOrientationManager = OrientationManager;
         }
 
         isBlockSystemInitialized = BlockSystem.Initialize();
@@ -54,8 +66,9 @@ public class BuildingGenerator : MonoBehaviour
         }
         else
         {
-            //Debug.Log("Initialized block system.");
+            Debug.Log("Initialized block system with orientation manager.");
         }
+
         if (enableDelayedPlacement)
         {
             StartCoroutine(StartGenerationNextFrame());
@@ -74,8 +87,6 @@ public class BuildingGenerator : MonoBehaviour
         // Then start the generation
         StartCoroutine(GenerateBuildingWithDelay());
     }
-
-
 
     public void GenerateBuildingImmediate()
     {
@@ -105,7 +116,7 @@ public class BuildingGenerator : MonoBehaviour
         {
             if (CurrentCells.Count == 0)
             {
-                //Debug.Log("CurrentCells count is 0, terminating generation");
+                Debug.Log("Building generation complete - no more cells to process");
                 break;
             }
             if (iteration < iterationLimit)
@@ -158,6 +169,10 @@ public class BuildingGenerator : MonoBehaviour
                         System.Threading.Thread.Sleep((int)(placementDelay * 1000));
                     }
                     BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
+                    if (rulesManager != null)
+                    {
+                        rulesManager.NotifyBlockPlaced(newBlock, newBlock.CurrentRotation, cell, this);
+                    }
                 }
             }
 
@@ -192,7 +207,7 @@ public class BuildingGenerator : MonoBehaviour
         {
             if (CurrentCells.Count == 0)
             {
-                Debug.Log("CurrentCells count is 0, terminating generation");
+                Debug.Log("Building generation complete - no more cells to process");
                 break;
             }
             if (iteration < iterationLimit)
@@ -234,14 +249,18 @@ public class BuildingGenerator : MonoBehaviour
                 BuildingBlock newBlock = FindValidBlockForPosition(cell, BuildingBlocksList, tryAllRotations: true, useRandomRotation: true);
                 if (newBlock == null)
                 {
-                    Debug.Log($"Couldn't find a valid block for the cell {cell}");
+                    //Debug.Log($"Couldn't find a valid block for the cell {cell}");
                     invalidCells.Add(cell);
                     continue;
                 }
                 else
                 {
                     BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
-                    Debug.Log($"Placed block: {newBlock.Name} at {cell}");
+                    //Debug.Log($"Placed block: {newBlock.Name} at {cell} with rotation {newBlock.CurrentRotation}°");
+                    if (rulesManager != null)
+                    {
+                        rulesManager.NotifyBlockPlaced(newBlock, newBlock.CurrentRotation, cell, this);
+                    }
                     yield return new WaitForSeconds(placementDelay);
                 }
             }
@@ -260,7 +279,6 @@ public class BuildingGenerator : MonoBehaviour
     {
         if (candidateBlocks == null || candidateBlocks.Count == 0)
             return null;
-
 
         List<(BuildingBlock block, int rotation, float weight)> validBlocks = new List<(BuildingBlock, int, float)>();
         float totalWeightSum = 0f;
@@ -283,23 +301,28 @@ public class BuildingGenerator : MonoBehaviour
             var (isValid, rotation) = BlockSystem.CheckBlockValidForPosition(
                 block, position, tryAllRotations, useRandomRotation);
 
-            if (isValid && ruleManager.EvaluateRules(block, position, rotation, BlockSystem))
+            if (isValid && rulesManager != null)
+            {
+                isValid = rulesManager.IsPlacementLegal(block, rotation, position, this);
+            }
+
+            if (isValid)
             {
                 float weight = BStyle.GetWeight(block.Name, normalizedHeight, normalizedDistance);
                 validBlocks.Add((block, rotation, weight));
                 totalWeightSum += weight;
-                Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight} at height {normalizedHeight:F2}, distance {normalizedDistance:F2}");
+
+                string ruleInfo = rulesManager != null ? " (passes rules)" : "";
+                Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight}{ruleInfo}");
 
             }
         }
 
         if (validBlocks.Count <= 0)
         {
-            Debug.Log($"Couldn't find a valid block for the cell {position}");
+            //Debug.Log($"Couldn't find a valid block for the cell {position}");
             return null;
         }
-
-        // Apply rules here to each direction
 
         // Choose a block based on weights
         float randomLimiter = Random.Range(0f, totalWeightSum);
@@ -310,7 +333,7 @@ public class BuildingGenerator : MonoBehaviour
             currentWeightSum += weight;
             if (currentWeightSum >= randomLimiter)
             {
-                Debug.Log($"{block.Name} is chosen with {weight / totalWeightSum * 100}% chance. Will be placed with rotation {rotation}°");
+                Debug.Log($"{block.Name} is chosen with {weight / totalWeightSum * 100:F1}% chance. Will be placed with rotation {rotation}°");
 
                 // Store rotation in the block for later use
                 BuildingBlock selectedBlock = CloneBlock(block);
@@ -356,7 +379,6 @@ public class BuildingGenerator : MonoBehaviour
         {
             Name = original.Name,
             Prefab = original.Prefab,
-            DownDirection = original.DownDirection,
             TopSocket = original.TopSocket,
             BottomSocket = original.BottomSocket,
             FrontSocket = original.FrontSocket,
