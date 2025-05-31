@@ -21,6 +21,9 @@ MonoBehaviour:
   - Uncompatible
   - Roof_Side
   - ground
+  - Roof_D
+  - Roof_E
+  - Roof_F
   SocketCompatibilities:
   - SocketType: Full_Top
     CompatibleSockets:
@@ -54,3 +57,12 @@ MonoBehaviour:
     CompatibleSockets:
     - ground
     - Full_Bottom
+  - SocketType: Roof_D
+    CompatibleSockets:
+    - Roof_D
+  - SocketType: Roof_E
+    CompatibleSockets:
+    - Roof_E
+  - SocketType: Roof_F
+    CompatibleSockets:
+    - Roof_F

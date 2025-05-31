@@ -16,20 +16,51 @@ MonoBehaviour:
   - blockName: Block_WindowSmall
     correctionRotation: {x: 0, y: 0, z: 0, w: 1}
     correctionOffset: {x: 0, y: 0, z: 0}
-    correctionScale: {x: 1, y: 1, z: 1}
   - blockName: BlockWithDoor
     correctionRotation: {x: 0, y: 0, z: 0, w: 1}
     correctionOffset: {x: 0, y: 0, z: 0}
-    correctionScale: {x: 1, y: 1, z: 1}
   - blockName: EmptyBlock
     correctionRotation: {x: 0, y: 0, z: 0, w: 1}
     correctionOffset: {x: 0, y: 0, z: 0}
-    correctionScale: {x: 1, y: 1, z: 1}
   - blockName: Block_WindowLarge
     correctionRotation: {x: 0, y: 0.70710677, z: 0, w: -0.70710677}
     correctionOffset: {x: 0, y: 0, z: 0}
-    correctionScale: {x: 1, y: 1, z: 1}
   - blockName: Roof_C1_A_1type
     correctionRotation: {x: 0, y: 0, z: 0.70710677, w: -0.70710677}
     correctionOffset: {x: 0, y: 0, z: 0}
-    correctionScale: {x: 1, y: 1, z: 1}
+  - blockName: Roof_C2_D_E_1type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C2_E_F_1type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C1_D_1type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C1_F_1type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C1_D_2type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C1_B_1type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C1_A_2type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C1_A_3type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C1_A_4type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C0_1type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C0_2type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
+  - blockName: Roof_C3_D_E_E_1type
+    correctionRotation: {x: 0, y: 0, z: -0.70710677, w: 0.70710677}
+    correctionOffset: {x: 0, y: 0, z: 0}
