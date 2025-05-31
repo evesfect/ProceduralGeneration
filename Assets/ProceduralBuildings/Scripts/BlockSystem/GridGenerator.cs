@@ -1056,7 +1056,7 @@ public class GridGenerator : MonoBehaviour
     /// </summary>
     /// <param name="blockData"></param>
     /// <param name="yRotationDegrees"></param>
-    private void ApplyHorizontalYRotation(BuildingBlock blockData, int yRotationDegrees)
+    public void ApplyHorizontalYRotation(BuildingBlock blockData, int yRotationDegrees)
     {
         // Normalize the rotation to 0, 90, 180, or 270 degrees
         yRotationDegrees = ((yRotationDegrees % 360) + 360) % 360;
@@ -1111,35 +1111,21 @@ public class GridGenerator : MonoBehaviour
     /// <param name="original"></param>
     /// <returns></returns>
     private BuildingBlock CloneBuildingBlock(BuildingBlock original)
-
     {
-
         BuildingBlock clone = new BuildingBlock
-
         {
-
             Name = original.Name,
-
             Prefab = original.Prefab,
-
             TopSocket = original.TopSocket,
-
             BottomSocket = original.BottomSocket,
-
             FrontSocket = original.FrontSocket,
-
             BackSocket = original.BackSocket,
-
             LeftSocket = original.LeftSocket,
-
-            RightSocket = original.RightSocket
-
+            RightSocket = original.RightSocket,
+            CurrentRotation = -1
         };
 
-
-
         return clone;
-
     }
 
 

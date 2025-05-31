@@ -108,7 +108,7 @@ public class BuildingGenerator : MonoBehaviour
         }
 
         // Place the initial block
-        BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, useRandomRotation: true);
+        BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, -1, true, true);
         CurrentCells.Add(StartingPosition);
         int iteration = 0;
         int iterationLimit = 100;
@@ -168,7 +168,7 @@ public class BuildingGenerator : MonoBehaviour
                     {
                         System.Threading.Thread.Sleep((int)(placementDelay * 1000));
                     }
-                    BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
+                    BlockSystem.PlaceBlock(newBlock, cell, newBlock.CurrentRotation);
                     if (rulesManager != null)
                     {
                         rulesManager.NotifyBlockPlaced(newBlock, newBlock.CurrentRotation, cell, this);
@@ -196,7 +196,7 @@ public class BuildingGenerator : MonoBehaviour
         }
 
         // Place the initial block
-        BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, useRandomRotation: true);
+        BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, -1, true, true);
         Debug.Log($"Placed initial block: {EmptyBlockName} at {StartingPosition}");
         CurrentCells.Add(StartingPosition);
         yield return new WaitForSeconds(placementDelay);
@@ -255,7 +255,7 @@ public class BuildingGenerator : MonoBehaviour
                 }
                 else
                 {
-                    BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
+                    BlockSystem.PlaceBlock(newBlock, cell, newBlock.CurrentRotation);
                     //Debug.Log($"Placed block: {newBlock.Name} at {cell} with rotation {newBlock.CurrentRotation}°");
                     if (rulesManager != null)
                     {
@@ -275,7 +275,7 @@ public class BuildingGenerator : MonoBehaviour
     /// Enhanced to use spatial factors for weight calculation and apply placement rules
     /// </summary>
     public BuildingBlock FindValidBlockForPosition(Vector3Int position, List<BuildingBlock> candidateBlocks,
-                                                  bool tryAllRotations = true, bool useRandomRotation = false)
+                                              bool tryAllRotations = true, bool useRandomRotation = false)
     {
         if (candidateBlocks == null || candidateBlocks.Count == 0)
             return null;
@@ -373,7 +373,7 @@ public class BuildingGenerator : MonoBehaviour
     }
 
     // Helper to clone a block with its successful rotation
-    private BuildingBlock CloneBlock(BuildingBlock original)
+    public BuildingBlock CloneBlock(BuildingBlock original)
     {
         return new BuildingBlock
         {
@@ -385,7 +385,7 @@ public class BuildingGenerator : MonoBehaviour
             BackSocket = original.BackSocket,
             LeftSocket = original.LeftSocket,
             RightSocket = original.RightSocket,
-            CurrentRotation = original.CurrentRotation
+            CurrentRotation = -1
         };
     }
 }
