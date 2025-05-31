@@ -204,6 +204,8 @@ public class BlockSystemInterface : MonoBehaviour
         return false;
     }
 
+
+
     /// <summary>
     /// Remove a building block from a cell
     /// </summary>
@@ -223,6 +225,16 @@ public class BlockSystemInterface : MonoBehaviour
     public List<BuildingBlock> GetAllBuildingBlocks()
     {
         return buildingBlocksManager.BuildingBlocks;
+    }
+
+    public List<int> GetAllValidRotations(BuildingBlock block, Vector3Int position)
+    {
+        // If the cell is already occupied, return empty list
+        if (IsCellOccupied(position))
+            return new List<int>();
+
+        // Use GridGenerator's method to get all valid rotations
+        return gridGenerator.GetAllValidRotations(block, position);
     }
 
     /// <summary>

@@ -298,23 +298,33 @@ public class BuildingGenerator : MonoBehaviour
         // Find all valid blocks and their rotations
         foreach (BuildingBlock block in candidateBlocks)
         {
-            var (isValid, rotation) = BlockSystem.CheckBlockValidForPosition(
-                block, position, tryAllRotations, useRandomRotation);
+            // Get all socket-compatible rotations for this block
+            List<int> socketValidRotations = BlockSystem.GetAllValidRotations(block, position);
 
-            if (isValid && rulesManager != null)
+            // Test each socket-compatible rotation with rules
+            foreach (int rotation in socketValidRotations)
             {
-                isValid = rulesManager.IsPlacementLegal(block, rotation, position, this);
-            }
+                bool passesRules = true;
 
-            if (isValid)
-            {
-                float weight = BStyle.GetWeight(block.Name, normalizedHeight, normalizedDistance);
-                validBlocks.Add((block, rotation, weight));
-                totalWeightSum += weight;
+                // Test with rules if rules manager exists
+                if (rulesManager != null)
+                {
+                    passesRules = rulesManager.IsPlacementLegal(block, rotation, position, this);
+                }
 
-                string ruleInfo = rulesManager != null ? " (passes rules)" : "";
-                Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight}{ruleInfo}");
+                if (passesRules)
+                {
+                    float weight = BStyle.GetWeight(block.Name, normalizedHeight, normalizedDistance);
+                    validBlocks.Add((block, rotation, weight));
+                    totalWeightSum += weight;
 
+                    string ruleInfo = rulesManager != null ? " (passes rules)" : "";
+                    Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight}{ruleInfo}");
+                }
+                else
+                {
+                    Debug.Log($"Block {block.Name} with rotation {rotation}° failed rules check");
+                }
             }
         }
 
@@ -388,4 +398,6 @@ public class BuildingGenerator : MonoBehaviour
             CurrentRotation = -1
         };
     }
+
+
 }
