@@ -18,4 +18,13 @@ MonoBehaviour:
     - Roof_C1_A_1type
     rules:
     - {fileID: 11400000, guid: 271a14b6023cb324d8b730d8551fc731, type: 2}
+    - {fileID: 11400000, guid: bdabb69ee9e211f4da2430652e32777f, type: 2}
+  - groupName: Non-Roof
+    blockNames:
+    - Block_WindowSmall
+    - BlockWithDoor
+    - EmptyBlock
+    - Block_WindowLarge
+    rules:
+    - {fileID: 11400000, guid: 2dd131db829e26d4b9211906187f0d19, type: 2}
   globalRules: []
