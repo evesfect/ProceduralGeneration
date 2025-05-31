@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BuildingGenerator : MonoBehaviour
 {
-    [SerializeField] private BlockSystemInterface BlockSystem;
+    [SerializeField] public BlockSystemInterface BlockSystem;
     [SerializeField] private BuildingStyle BStyle;
     [SerializeField] private BlockOrientationManager OrientationManager;
     [SerializeField] private BlockRulesManager rulesManager;
