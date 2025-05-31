@@ -584,7 +584,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blockOrientationManager: {fileID: 0}
-  gridDimensions: {x: 3, y: 2, z: 3}
+  gridDimensions: {x: 10, y: 3, z: 10}
   cellSizePrefab: {fileID: 2616496724786896443, guid: a8f5a801e9cb3c148872b35aad0365d1, type: 3}
   gridOrigin: {fileID: 1050012403}
   groundSocketType: ground
@@ -593,12 +593,19 @@ MonoBehaviour:
   enableAutoRotation: 0
   buildingBlocksManager: {fileID: 11400000, guid: 8a0c0ab3ae70cb14d87cbc4b5cdc5cfb, type: 2}
   socketManager: {fileID: 11400000, guid: 7891506dfb7460c4aa40d88fa2896917, type: 2}
-  showGridGizmos: 1
-  showSocketGizmos: 1
+  showGridGizmos: 0
+  showSocketGizmos: 0
   groundCellRows:
-  - cells: 010101
-  - cells: 010101
-  - cells: 010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
+  - cells: 01010101010101010101
 --- !u!4 &618881659
 Transform:
   m_ObjectHideFlags: 0
