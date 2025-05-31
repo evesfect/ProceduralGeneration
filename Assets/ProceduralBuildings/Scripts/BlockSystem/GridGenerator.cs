@@ -1056,7 +1056,7 @@ public class GridGenerator : MonoBehaviour
     /// </summary>
     /// <param name="blockData"></param>
     /// <param name="yRotationDegrees"></param>
-    private void ApplyHorizontalYRotation(BuildingBlock blockData, int yRotationDegrees)
+    public void ApplyHorizontalYRotation(BuildingBlock blockData, int yRotationDegrees)
     {
         // Normalize the rotation to 0, 90, 180, or 270 degrees
         yRotationDegrees = ((yRotationDegrees % 360) + 360) % 360;
@@ -1102,6 +1102,42 @@ public class GridGenerator : MonoBehaviour
         }
     }
 
+    public List<int> GetAllValidRotations(BuildingBlock blockData, Vector3Int gridPosition)
+    {
+        List<int> validRotations = new List<int>();
+
+        // Check if the position is valid
+        if (!IsValidPosition(gridPosition))
+        {
+            return validRotations;
+        }
+
+        // Check if the cell is already occupied
+        if (grid[gridPosition.x, gridPosition.y, gridPosition.z].isOccupied)
+        {
+            return validRotations;
+        }
+
+        // Test all 4 rotations
+        int[] rotationsToTry = { 0, 90, 180, 270 };
+
+        foreach (int yRotation in rotationsToTry)
+        {
+            // Clone the block data to prevent modifying the original
+            BuildingBlock blockDataClone = CloneBuildingBlock(blockData);
+
+            // Apply the horizontal rotation
+            ApplyHorizontalYRotation(blockDataClone, yRotation);
+
+            // Test if the block fits with this rotation
+            if (AreSocketsCompatible(blockDataClone, gridPosition))
+            {
+                validRotations.Add(yRotation);
+            }
+        }
+
+        return validRotations;
+    }
 
 
 
@@ -1111,35 +1147,21 @@ public class GridGenerator : MonoBehaviour
     /// <param name="original"></param>
     /// <returns></returns>
     private BuildingBlock CloneBuildingBlock(BuildingBlock original)
-
     {
-
         BuildingBlock clone = new BuildingBlock
-
         {
-
             Name = original.Name,
-
             Prefab = original.Prefab,
-
             TopSocket = original.TopSocket,
-
             BottomSocket = original.BottomSocket,
-
             FrontSocket = original.FrontSocket,
-
             BackSocket = original.BackSocket,
-
             LeftSocket = original.LeftSocket,
-
-            RightSocket = original.RightSocket
-
+            RightSocket = original.RightSocket,
+            CurrentRotation = -1
         };
 
-
-
         return clone;
-
     }
 
 

@@ -150,7 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gridGenerator: {fileID: 618881658}
   buildingBlocksManager: {fileID: 11400000, guid: 8a0c0ab3ae70cb14d87cbc4b5cdc5cfb, type: 2}
-  blockOrientationManager: {fileID: 0}
+  blockOrientationManager: {fileID: 11400000, guid: 24599a638cfb29d45a0a196dd5283027, type: 2}
   socketManager: {fileID: 11400000, guid: 7891506dfb7460c4aa40d88fa2896917, type: 2}
 --- !u!4 &76781208
 Transform:
@@ -533,6 +533,7 @@ MonoBehaviour:
   BlockSystem: {fileID: 76781207}
   BStyle: {fileID: 11400000, guid: c7b56c91aff16c5488964947de810278, type: 2}
   OrientationManager: {fileID: 11400000, guid: 24599a638cfb29d45a0a196dd5283027, type: 2}
+  rulesManager: {fileID: 11400000, guid: c7a0cd20ddfaee447a965abe3606e2d6, type: 2}
   EmptyBlockName: EmptyBlock
   StartingPosition: {x: 1, y: 0, z: 1}
   placementDelay: 0.05

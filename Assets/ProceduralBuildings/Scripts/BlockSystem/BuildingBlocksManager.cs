@@ -13,7 +13,7 @@ public class BuildingBlock
     [System.Obsolete("DownDirection is being phased out in favor of BlockOrientationData")]
     public Direction DownDirection = Direction.Down;
 
-    public int CurrentRotation = 0;
+    public int CurrentRotation = -1;
 
     // Socket assignments for each direction
     public string TopSocket;
@@ -85,6 +85,7 @@ public class BuildingBlocksManager : ScriptableObject
         {
             Name = prefab.name,
             Prefab = prefab,
+            CurrentRotation = -1
         };
 
         BuildingBlocks.Add(newBlock);

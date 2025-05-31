@@ -178,30 +178,33 @@ public class BlockSystemInterface : MonoBehaviour
     /// <param name="tryAllRotations">Whether to try all rotations to find a valid placement</param>
     /// <param name="useRandomRotation">Whether to use random rotation for initial placement attempt</param>
     /// <returns>True if placement was successful</returns>
-    public bool PlaceBlock(BuildingBlock block, Vector3Int position, bool tryAllRotations = false, bool useRandomRotation = false)
+    public bool PlaceBlock(BuildingBlock block, Vector3Int position, int rotation = -1, bool tryAllRotations = false, bool useRandomRotation = false)
     {
-        // If the block already has a known valid rotation from validation
-        if (block.CurrentRotation != 0)
+        // If specific rotation is provided, use it directly
+        if (rotation != -1)
         {
-            // Place with the specific rotation
-            //Debug.Log($"Using pre-determined rotation: {block.CurrentRotation}°");
+            return gridGenerator.PutInCell(block, position, rotation);
+        }
+
+        // If the block already has a known valid rotation from validation
+        if (block.CurrentRotation != -1)
+        {
             return gridGenerator.PutInCell(block, position, block.CurrentRotation);
         }
 
         // Test placement first to find valid rotation
-        var (success, rotation) = gridGenerator.TestBlockPlacement(block, position, tryAllRotations, useRandomRotation);
+        var (success, foundRotation) = gridGenerator.TestBlockPlacement(block, position, tryAllRotations, useRandomRotation);
 
         if (success)
         {
-            // Save the working rotation for potential future use
-            block.CurrentRotation = rotation;
-
-            // Place with the identified working rotation
-            return gridGenerator.PutInCell(block, position, rotation);
+            block.CurrentRotation = foundRotation;
+            return gridGenerator.PutInCell(block, position, foundRotation);
         }
 
         return false;
     }
+
+
 
     /// <summary>
     /// Remove a building block from a cell
@@ -222,6 +225,16 @@ public class BlockSystemInterface : MonoBehaviour
     public List<BuildingBlock> GetAllBuildingBlocks()
     {
         return buildingBlocksManager.BuildingBlocks;
+    }
+
+    public List<int> GetAllValidRotations(BuildingBlock block, Vector3Int position)
+    {
+        // If the cell is already occupied, return empty list
+        if (IsCellOccupied(position))
+            return new List<int>();
+
+        // Use GridGenerator's method to get all valid rotations
+        return gridGenerator.GetAllValidRotations(block, position);
     }
 
     /// <summary>
