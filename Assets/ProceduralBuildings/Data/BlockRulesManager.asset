@@ -12,10 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5301e942bfb793143b7416308649a982, type: 3}
   m_Name: BlockRulesManager
   m_EditorClassIdentifier: 
-  blockGroups:
-  - groupName: Roof
-    blockNames:
-    - Roof_C1_A_1type
-    rules:
-    - {fileID: 11400000, guid: 271a14b6023cb324d8b730d8551fc731, type: 2}
+  blockGroups: []
   globalRules: []
