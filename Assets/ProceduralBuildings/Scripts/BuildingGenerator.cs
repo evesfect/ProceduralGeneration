@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BuildingGenerator : MonoBehaviour
 {
-    [SerializeField] public BlockSystemInterface BlockSystem;
+    [SerializeField] private BlockSystemInterface BlockSystem;
     [SerializeField] private BuildingStyle BStyle;
     [SerializeField] private BlockOrientationManager OrientationManager;
     [SerializeField] private BlockRulesManager rulesManager;
@@ -108,7 +108,7 @@ public class BuildingGenerator : MonoBehaviour
         }
 
         // Place the initial block
-        BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, -1, true, true);
+        BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, useRandomRotation: true);
         CurrentCells.Add(StartingPosition);
         int iteration = 0;
         int iterationLimit = 100;
@@ -168,7 +168,7 @@ public class BuildingGenerator : MonoBehaviour
                     {
                         System.Threading.Thread.Sleep((int)(placementDelay * 1000));
                     }
-                    BlockSystem.PlaceBlock(newBlock, cell, newBlock.CurrentRotation);
+                    BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
                     if (rulesManager != null)
                     {
                         rulesManager.NotifyBlockPlaced(newBlock, newBlock.CurrentRotation, cell, this);
@@ -196,7 +196,7 @@ public class BuildingGenerator : MonoBehaviour
         }
 
         // Place the initial block
-        BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, -1, true, true);
+        BlockSystem.PlaceBlock(EmptyBlock, StartingPosition, useRandomRotation: true);
         Debug.Log($"Placed initial block: {EmptyBlockName} at {StartingPosition}");
         CurrentCells.Add(StartingPosition);
         yield return new WaitForSeconds(placementDelay);
@@ -255,7 +255,7 @@ public class BuildingGenerator : MonoBehaviour
                 }
                 else
                 {
-                    BlockSystem.PlaceBlock(newBlock, cell, newBlock.CurrentRotation);
+                    BlockSystem.PlaceBlock(newBlock, cell, tryAllRotations: true, useRandomRotation: true);
                     //Debug.Log($"Placed block: {newBlock.Name} at {cell} with rotation {newBlock.CurrentRotation}°");
                     if (rulesManager != null)
                     {
@@ -275,7 +275,7 @@ public class BuildingGenerator : MonoBehaviour
     /// Enhanced to use spatial factors for weight calculation and apply placement rules
     /// </summary>
     public BuildingBlock FindValidBlockForPosition(Vector3Int position, List<BuildingBlock> candidateBlocks,
-                                              bool tryAllRotations = true, bool useRandomRotation = false)
+                                                  bool tryAllRotations = true, bool useRandomRotation = false)
     {
         if (candidateBlocks == null || candidateBlocks.Count == 0)
             return null;
@@ -298,33 +298,23 @@ public class BuildingGenerator : MonoBehaviour
         // Find all valid blocks and their rotations
         foreach (BuildingBlock block in candidateBlocks)
         {
-            // Get all socket-compatible rotations for this block
-            List<int> socketValidRotations = BlockSystem.GetAllValidRotations(block, position);
+            var (isValid, rotation) = BlockSystem.CheckBlockValidForPosition(
+                block, position, tryAllRotations, useRandomRotation);
 
-            // Test each socket-compatible rotation with rules
-            foreach (int rotation in socketValidRotations)
+            if (isValid && rulesManager != null)
             {
-                bool passesRules = true;
+                isValid = rulesManager.IsPlacementLegal(block, rotation, position, this);
+            }
 
-                // Test with rules if rules manager exists
-                if (rulesManager != null)
-                {
-                    passesRules = rulesManager.IsPlacementLegal(block, rotation, position, this);
-                }
+            if (isValid)
+            {
+                float weight = BStyle.GetWeight(block.Name, normalizedHeight, normalizedDistance);
+                validBlocks.Add((block, rotation, weight));
+                totalWeightSum += weight;
 
-                if (passesRules)
-                {
-                    float weight = BStyle.GetWeight(block.Name, normalizedHeight, normalizedDistance);
-                    validBlocks.Add((block, rotation, weight));
-                    totalWeightSum += weight;
+                string ruleInfo = rulesManager != null ? " (passes rules)" : "";
+                Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight}{ruleInfo}");
 
-                    string ruleInfo = rulesManager != null ? " (passes rules)" : "";
-                    Debug.Log($"Found valid block {block.Name} with rotation {rotation}° and weight {weight}{ruleInfo}");
-                }
-                else
-                {
-                    Debug.Log($"Block {block.Name} with rotation {rotation}° failed rules check");
-                }
             }
         }
 
@@ -383,7 +373,7 @@ public class BuildingGenerator : MonoBehaviour
     }
 
     // Helper to clone a block with its successful rotation
-    public BuildingBlock CloneBlock(BuildingBlock original)
+    private BuildingBlock CloneBlock(BuildingBlock original)
     {
         return new BuildingBlock
         {
@@ -395,9 +385,7 @@ public class BuildingGenerator : MonoBehaviour
             BackSocket = original.BackSocket,
             LeftSocket = original.LeftSocket,
             RightSocket = original.RightSocket,
-            CurrentRotation = -1
+            CurrentRotation = original.CurrentRotation
         };
     }
-
-
 }
