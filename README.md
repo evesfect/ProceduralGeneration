@@ -1,6 +1,6 @@
 # Procedural Building Generation System
 
-**A socket-based modular building generation system for Unity using Wave Function Collapse**
+**A socket-based modular building generation system for Unity**
 
 Created by [evesfect](https://github.com/evesfect)
 
